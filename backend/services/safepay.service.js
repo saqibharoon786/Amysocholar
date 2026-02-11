@@ -1,100 +1,96 @@
-// services/safepay.service.js
-const axios = require('axios');
-const crypto = require('crypto');
+// services/safepay.service.js – production & sandbox
+const axios = require("axios");
+const crypto = require("crypto");
+
+const PRODUCTION_API = "https://api.getsafepay.com";
+const SANDBOX_API = "https://sandbox.api.getsafepay.com";
 
 class SafepayService {
   constructor() {
+    const env = (process.env.SAFEPAY_ENVIRONMENT || "sandbox").toLowerCase();
+    const isProduction = env === "production" || env === "live";
+    const baseUrl = process.env.SAFEPAY_BASE_URL || (isProduction ? PRODUCTION_API : SANDBOX_API);
+    const componentsUrl =
+      process.env.SAFEPAY_COMPONENTS_URL ||
+      (isProduction ? `${PRODUCTION_API}/components` : `${SANDBOX_API}/components`);
+
     this.config = {
       secretKey: process.env.SAFEPAY_SECRET_KEY,
       publicKey: process.env.SAFEPAY_PUBLIC_KEY,
       webhookSecret: process.env.SAFEPAY_WEBHOOK_SECRET,
-      environment: process.env.SAFEPAY_ENVIRONMENT || 'sandbox',
-      baseUrl: process.env.SAFEPAY_BASE_URL || 'https://sandbox.api.getsafepay.com'
+      environment: isProduction ? "production" : "sandbox",
+      baseUrl,
+      componentsUrl,
     };
   }
 
-  /**
-   * Create a payment request
-   * @param {number} amount - Amount in PKR
-   * @param {string} userId - User ID
-   * @param {string} bookId - Book ID
-   * @param {string} sellerId - Seller ID
-   * @param {object} metadata - Additional metadata
-   */
   async createPaymentRequest(amount, userId, bookId, sellerId, metadata = {}) {
     try {
+      if (!this.config.secretKey) {
+        throw new Error("SAFEPAY_SECRET_KEY is required in .env");
+      }
+
       const requestData = {
         client: this.config.secretKey,
         amount: Number(amount),
         currency: "PKR",
-        environment: this.config.environment
+        environment: this.config.environment,
       };
 
-      console.log("Creating Safepay order with data:", requestData);
+      if (process.env.NODE_ENV !== "production") {
+        console.log("Safepay order init:", { amount: requestData.amount, env: this.config.environment });
+      }
 
       const response = await axios.post(
         `${this.config.baseUrl}/order/v1/init`,
         requestData,
         {
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          }
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
         }
       );
 
-      console.log("Safepay Response:", response.data);
-
       const trackerToken = response.data?.data?.token;
-
       if (!trackerToken) {
         throw new Error("Invalid response from Safepay: missing tracker token");
       }
 
-      // Build checkout URL
-      const checkoutBase = this.config.environment === "sandbox" 
-        ? "https://sandbox.api.getsafepay.com/components"
-        : "https://www.getsafepay.com/components";
+      const successUrl =
+        process.env.SAFEPAY_SUCCESS_URL ||
+        `${process.env.BASE_URL || ""}/api/payments/safepay/return`;
+      const cancelUrl =
+        process.env.SAFEPAY_CANCEL_URL ||
+        `${process.env.FRONTEND_URL || ""}/books`;
 
-      const successUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/api/payments/safepay/return`;
-      const cancelUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/books`;
+      if (
+        !successUrl ||
+        successUrl.includes("undefined") ||
+        !cancelUrl ||
+        cancelUrl.includes("undefined")
+      ) {
+        throw new Error(
+          "BASE_URL and FRONTEND_URL (or SAFEPAY_SUCCESS_URL and SAFEPAY_CANCEL_URL) must be set in .env"
+        );
+      }
 
-      const paymentUrl = `${checkoutBase}?env=${this.config.environment}&beacon=${trackerToken}&source=custom&redirect_url=${encodeURIComponent(successUrl)}&cancel_url=${encodeURIComponent(cancelUrl)}`;
+      const paymentUrl = `${this.config.componentsUrl}?env=${this.config.environment}&beacon=${trackerToken}&source=custom&redirect_url=${encodeURIComponent(successUrl)}&cancel_url=${encodeURIComponent(cancelUrl)}`;
 
       return {
         paymentUrl,
         tracker: trackerToken,
         transactionRef: `SP_${Date.now()}_${userId.substring(0, 8)}`,
-        metadata: {
-          userId,
-          bookId,
-          sellerId,
-          ...metadata
-        }
+        metadata: { userId, bookId, sellerId, ...metadata },
       };
-
     } catch (error) {
       console.error("Safepay createPaymentRequest error:", error.response?.data || error.message);
       throw error;
     }
   }
 
-  /**
-   * Verify payment
-   * @param {string} tracker - Tracker token
-   */
   async verifyPayment(tracker) {
     try {
-      const response = await axios.get(
-        `${this.config.baseUrl}/order/v1/${tracker}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          }
-        }
-      );
-
+      const response = await axios.get(`${this.config.baseUrl}/order/v1/${tracker}`, {
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+      });
       return response.data;
     } catch (error) {
       console.error("Safepay verifyPayment error:", error.response?.data || error.message);
@@ -102,41 +98,24 @@ class SafepayService {
     }
   }
 
-  /**
-   * Verify webhook signature
-   * @param {Buffer} rawBody - Raw request body
-   * @param {string} signature - X-SFPY-Signature header
-   */
   verifyWebhookSignature(rawBody, signature) {
-    if (!signature) {
-      return false;
-    }
-
-    const computedSignature = crypto
+    if (!signature || !this.config.webhookSecret) return false;
+    const computed = crypto
       .createHmac("sha256", this.config.webhookSecret)
       .update(rawBody)
       .digest("hex");
-
-    return signature.toLowerCase() === computedSignature;
+    return signature.toLowerCase() === computed;
   }
 
-  /**
-   * Parse webhook event
-   * @param {object} eventData - Webhook data
-   */
   parseWebhookEvent(eventData) {
-    const event = eventData;
-    
-    const paymentData = {
-      tracker: event.tracker || event.data?.tracker?.token,
-      amount: event.amount || event.data?.amount,
-      currency: event.currency || event.data?.currency || 'PKR',
-      status: event.event === 'payment.completed' ? 'paid' : (event.status || 'unknown'),
-      metadata: event.metadata || event.data?.metadata || {},
-      timestamp: new Date(event.timestamp || Date.now())
+    return {
+      tracker: eventData.tracker || eventData.data?.tracker?.token,
+      amount: eventData.amount || eventData.data?.amount,
+      currency: eventData.currency || eventData.data?.currency || "PKR",
+      status: eventData.event === "payment.completed" ? "paid" : (eventData.status || "unknown"),
+      metadata: eventData.metadata || eventData.data?.metadata || {},
+      timestamp: new Date(eventData.timestamp || Date.now()),
     };
-
-    return paymentData;
   }
 }
 

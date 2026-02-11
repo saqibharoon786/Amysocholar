@@ -1,6 +1,8 @@
 const Book = require('../models/book.model');
 const Purchase = require('../models/purchases.model');
+const Payment = require('../models/payment.model');
 const AppError = require('../utils/appError');
+const { createPaymentWithCommission } = require('../services/payment.service');
 
 // Upload book (Admin and SuperAdmin)
 const uploadBook = async (req, res, next) => {
@@ -504,7 +506,7 @@ const getBookPreview = async (req, res, next) => {
 const purchaseBook = async (req, res, next) => {
   try {
     const { format = 'pdf', paymentMethod } = req.body;
-    const book = await Book.findById(req.params.id);
+    const book = await Book.findById(req.params.id).populate('uploader', 'firstName lastName email');
     if (!book) {
       return next(new AppError('Book not found', 404));
     }
@@ -513,7 +515,6 @@ const purchaseBook = async (req, res, next) => {
       return next(new AppError('This book is not available for purchase', 400));
     }
 
-    // Check if already purchased
     const existingPurchase = await Purchase.findOne({
       user: req.user.id,
       book: book._id,
@@ -523,13 +524,56 @@ const purchaseBook = async (req, res, next) => {
       return next(new AppError('You have already purchased this book', 400));
     }
 
-    // Calculate amount - text format is free, PDF is paid
-    let amount = 0;
-    if (format === 'pdf') {
-      amount = book.discountedPrice || book.price;
+    const amount = format === 'pdf' ? (book.discountedPrice || book.price) : 0;
+
+    // Safepay: create payment and return checkout URL so frontend can redirect directly
+    if (paymentMethod === 'safepay' && format === 'pdf') {
+      if (!book.uploader || !book.uploader._id) {
+        return next(new AppError('Book seller information missing', 400));
+      }
+      const sellerType = book.uploaderType || 'admin';
+      const paymentData = await createPaymentWithCommission(
+        amount,
+        req.user.id,
+        book._id,
+        book.uploader._id,
+        sellerType
+      );
+
+      await Payment.create({
+        user: req.user.id,
+        book: book._id,
+        amount,
+        seller: book.uploader._id,
+        sellerType,
+        commission: paymentData.commission,
+        transactionRef: paymentData.transactionRef,
+        tracker: paymentData.tracker,
+        status: 'PENDING',
+        safepayResponse: {
+          tracker: paymentData.tracker,
+          paymentUrl: paymentData.paymentUrl
+        },
+        metadata: {
+          bookTitle: book.title,
+          sellerName: book.uploader ? `${book.uploader.firstName} ${book.uploader.lastName}` : '',
+          ...paymentData.metadata
+        }
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Redirect to checkout',
+        data: {
+          paymentUrl: paymentData.paymentUrl,
+          redirectUrl: paymentData.paymentUrl,
+          tracker: paymentData.tracker,
+          transactionRef: paymentData.transactionRef
+        }
+      });
     }
 
-    // Create purchase record
+    // Non-Safepay: create purchase record (bank, etc.)
     const purchase = await Purchase.create({
       user: req.user.id,
       book: book._id,

@@ -5,16 +5,15 @@ const Purchase = require("../models/purchases.model.js");
 const Commission = require("../models/commission.model.js");
 const { createPaymentWithCommission, verifyPayment, SafepayService } = require("../services/payment.service.js");
 
+const isDev = process.env.NODE_ENV !== "production";
+
 const createPayment = async (req, res) => {
   try {
-    console.log('=== PAYMENT CREATE START ===');
-    console.log('User:', req.user);
-    console.log('Book ID:', req.body.bookId);
-    
+    if (isDev) console.log("Payment create:", req.body?.bookId);
+
     const { bookId } = req.body;
-    
+
     if (!req.user || !req.user.id) {
-      console.log('No user found');
       return res.status(401).json({ 
         success: false, 
         message: "Authentication required" 
@@ -26,18 +25,13 @@ const createPayment = async (req, res) => {
     const book = await Book.findById(bookId).populate('uploader', 'firstName lastName email');
     
     if (!book) {
-      console.log('Book not found for ID:', bookId);
       return res.status(404).json({ 
         success: false, 
         message: "Book not found" 
       });
     }
     
-    console.log('Book found:', book.title);
-    console.log('Book uploader:', book.uploader);
-    
-    if (book.status !== 'approved') {
-      console.log('Book not approved:', book.status);
+    if (book.status !== "approved") {
       return res.status(400).json({ 
         success: false, 
         message: "Book is not available for purchase" 
@@ -51,7 +45,6 @@ const createPayment = async (req, res) => {
     });
     
     if (existingPurchase) {
-      console.log('Already purchased');
       return res.status(400).json({ 
         success: false, 
         message: "You have already purchased this book" 
@@ -59,12 +52,8 @@ const createPayment = async (req, res) => {
     }
     
     const amount = book.discountedPrice || book.price;
-    const sellerType = book.uploaderType || 'admin';
-    
-    console.log('Amount:', amount);
-    console.log('Seller type:', sellerType);
-    console.log('Seller ID:', book.uploader?._id);
-    
+    const sellerType = book.uploaderType || "admin";
+
     // Create payment with commission calculation
     const paymentData = await createPaymentWithCommission(
       amount, 
@@ -73,9 +62,7 @@ const createPayment = async (req, res) => {
       book.uploader._id,
       sellerType
     );
-    
-    console.log('Payment data received:', paymentData);
-    
+
     // Save payment record
     const paymentRecord = await Payment.create({
       user: userId,
@@ -97,9 +84,7 @@ const createPayment = async (req, res) => {
         ...paymentData.metadata
       }
     });
-    
-    console.log('Payment record created:', paymentRecord._id);
-    
+
     return res.status(200).json({
       success: true,
       message: "Payment initiated successfully",
@@ -114,8 +99,7 @@ const createPayment = async (req, res) => {
       commissionBreakdown: paymentData.commission
     });
   } catch (error) {
-    console.error("Payment Creation Error:", error);
-    console.error("Error stack:", error.stack);
+    console.error("Payment Creation Error:", error.message);
     return res.status(500).json({ 
       success: false, 
       message: error.message || "Internal Server Error",
@@ -123,74 +107,31 @@ const createPayment = async (req, res) => {
     });
   }
 };
-// Safepay return URL handler
-// Safepay return URL handler
 const safepayReturn = async (req, res) => {
   try {
-    console.log('\n=== SAFEPAY RETURN CALLED ===');
-    console.log('Timestamp:', new Date().toISOString());
-    console.log('Full URL:', req.originalUrl);
-    console.log('HTTP Method:', req.method);
-    console.log('Query params:', req.query);
-    console.log('Request headers:', req.headers);
-    
+    if (isDev) console.log("Safepay return:", req.method, req.query?.tracker ? "tracker=" + req.query.tracker : req.query);
+
     let { tracker, status, cancel } = req.query;
-    
-    // Debug: Log raw body for POST requests
-    if (req.method === 'POST') {
-      console.log('Request body (raw):', req.body);
-      console.log('Raw body buffer:', req.rawBody ? req.rawBody.toString() : 'No raw body');
-    }
-    
+
     // Also check for tracker in body for POST requests
+    if (!tracker && req.body?.tracker) tracker = req.body.tracker;
     if (!tracker) {
-      console.log('No tracker in query params, checking request body...');
-      if (req.body && req.body.tracker) {
-        tracker = req.body.tracker;
-        console.log('Found tracker in request body:', tracker);
-      }
-    }
-    
-    // Check common Safepay parameter names
-    if (!tracker) {
-      console.log('Checking for tracker in common parameter names...');
-      const safepayParams = ['tracker', 'token', 'beacon', 'reference', 'tracker_id', 'order_id'];
+      const safepayParams = ["tracker", "token", "beacon", "reference", "tracker_id", "order_id"];
       for (const param of safepayParams) {
-        if (req.query[param]) {
-          tracker = req.query[param];
-          console.log(`Found tracker as '${param}':`, tracker);
-          break;
-        }
+        if (req.query[param]) { tracker = req.query[param]; break; }
       }
     }
-    
-    // Check body parameters too
     if (!tracker && req.body) {
-      console.log('Checking request body for common parameter names...');
-      const safepayBodyParams = ['tracker', 'token', 'beacon', 'reference'];
-      for (const param of safepayBodyParams) {
-        if (req.body[param]) {
-          tracker = req.body[param];
-          console.log(`Found tracker in body as '${param}':`, tracker);
-          break;
-        }
+      for (const param of ["tracker", "token", "beacon", "reference"]) {
+        if (req.body[param]) { tracker = req.body[param]; break; }
       }
     }
-    
-    // Check URL fragments (some gateways use #)
-    if (!tracker && req.originalUrl.includes('#')) {
-      console.log('Checking URL fragments...');
-      const fragment = req.originalUrl.split('#')[1];
-      if (fragment.includes('tracker=')) {
-        tracker = fragment.split('tracker=')[1]?.split('&')[0];
-        console.log('Found tracker in URL fragment:', tracker);
-      }
+    if (!tracker && req.originalUrl.includes("#")) {
+      const fragment = req.originalUrl.split("#")[1];
+      if (fragment?.includes("tracker=")) tracker = fragment.split("tracker=")[1]?.split("&")[0];
     }
-    
-    console.log('Final tracker value:', tracker || 'NOT FOUND');
-    
-    if (cancel === 'true') {
-      console.log('Payment cancelled by user');
+
+    if (cancel === "true") {
       return res.status(400).send(`
         <!DOCTYPE html>
         <html>
@@ -302,11 +243,7 @@ const safepayReturn = async (req, res) => {
       return res.status(400).send(debugHtml);
     }
     
-    console.log('Verifying payment with tracker:', tracker);
-    
-    // Verify payment status with Safepay
     const verification = await verifyPayment(tracker);
-    console.log("Safepay verification response:", verification);
     
     // Find payment record
     const payment = await Payment.findOne({ tracker })
@@ -318,7 +255,6 @@ const safepayReturn = async (req, res) => {
       console.error("Payment not found for tracker:", tracker);
       
       // Try to find by transactionRef or other identifiers
-      console.log("Searching for payment with other identifiers...");
       const altPayment = await Payment.findOne({
         $or: [
           { transactionRef: { $regex: tracker, $options: 'i' } },
@@ -331,7 +267,6 @@ const safepayReturn = async (req, res) => {
       .populate('user');
       
       if (altPayment) {
-        console.log("Found payment using alternative search:", altPayment._id);
         payment = altPayment;
       } else {
         console.error("No payment found with any identifier matching:", tracker);
@@ -373,7 +308,6 @@ const isSuccess = verification?.data?.state === 'paid' ||
                   verification?.data?.transaction?.id !== undefined ||
                   verification?.data?.transaction?.reference !== undefined;
 
-console.log('Payment success status:', isSuccess, 'Verification data state:', verification?.data?.state);
     
     if (isSuccess) {
       payment.status = "SUCCESS";
@@ -428,8 +362,6 @@ console.log('Payment success status:', isSuccess, 'Verification data state:', ve
       const seller = await User.findById(payment.seller._id);
 if (seller) {
   await seller.addEarnings(commission.sellerAmount);
-     console.log(`Added ${commission.sellerAmount} to seller's pending balance.`);
-        console.log(`Seller ${seller.email}: totalEarnings=${seller.wallet.totalEarnings}, pendingBalance=${seller.wallet.pendingBalance}, availableBalance=${seller.wallet.availableBalance}`);
 }
 
       // Distribute earnings
@@ -439,7 +371,7 @@ if (seller) {
       payment.earningsStatus = 'PROCESSED';
       payment.processedAt = new Date();
       
-      console.log(`Payment ${tracker} completed. Commission distributed. Purchase ID: ${purchase._id}`);
+      if (isDev) console.log("Payment completed:", tracker);
       
       const successHtml = `
         <!DOCTYPE html>
@@ -545,7 +477,7 @@ if (seller) {
       };
       await payment.save();
       
-      console.log(`Payment ${tracker} failed. Verification status:`, verification?.data?.state || verification?.status);
+      if (isDev) console.log("Payment failed:", tracker);
       
       const failedHtml = `
         <!DOCTYPE html>
@@ -657,8 +589,8 @@ if (seller) {
 // Safepay webhook handler
 const safepayWebhook = async (req, res) => {
   try {
-    console.log("Safepay Webhook Received:", req.body);
-    
+    if (isDev) console.log("Safepay webhook:", req.body?.event || req.body);
+
     const signature = req.headers["x-sfpy-signature"];
     const rawBody = req.rawBody || Buffer.from(JSON.stringify(req.body));
     
@@ -733,7 +665,7 @@ const safepayWebhook = async (req, res) => {
           }, 0);
         }
         
-        console.log(`Webhook: Payment ${event.tracker} processed`);
+        if (isDev) console.log("Webhook processed:", event.tracker);
       }
     }
     

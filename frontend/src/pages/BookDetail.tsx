@@ -115,9 +115,10 @@ const handlePurchase = async (paymentMethod: 'safepay' | 'bank' | 'jazzcash' | '
     });
     
     if (response.success) {
-      if (paymentMethod === 'safepay' && response.data?.paymentUrl) {
-        // Redirect to SafePay payment page
-        window.location.href = response.data.paymentUrl;
+      const data = response.data as { purchase?: unknown; paymentUrl?: string; redirectUrl?: string };
+      if (paymentMethod === 'safepay' && (data?.paymentUrl || data?.redirectUrl)) {
+        // Redirect straight to Safepay checkout
+        window.location.href = data.paymentUrl || data.redirectUrl;
       } else if (paymentMethod === 'bank') {
         toast.success('Purchase initiated! Complete bank transfer to get access.');
         // You can show bank details modal here

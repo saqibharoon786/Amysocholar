@@ -13,7 +13,6 @@ const protect = async (req, res, next) => {
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
     }
-console.log("Token:", token);
     if (!token) {
       return next(new AppError('Please log in to access this resource', 401));
     }
