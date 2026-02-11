@@ -1,7 +1,7 @@
 // components/DailyDeals.tsx
 import { Badge } from "./ui/badge";
 import { useEffect, useState } from "react";
-import { BookService, Book } from "@/services/bookService";
+import { BookService, Book } from "@/services/BookService";
 import { Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 

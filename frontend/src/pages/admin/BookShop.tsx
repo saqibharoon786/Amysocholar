@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Eye, CheckCircle, XCircle, Filter, Search, Star, Download, User, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { BookService, Book } from "@/services/bookService";
+import { BookService, Book } from "@/services/BookService";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Dialog,

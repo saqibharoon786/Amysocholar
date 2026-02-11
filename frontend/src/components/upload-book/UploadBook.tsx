@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { BookService } from "@/services/bookService";
+import { BookService } from "@/services/BookService";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import UploadForm from "./UploadForm";

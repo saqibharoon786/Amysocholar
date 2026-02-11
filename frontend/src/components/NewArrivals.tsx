@@ -3,7 +3,7 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { BookService, Book, PopularCategory } from "@/services/bookService";
+import { BookService, Book, PopularCategory } from "@/services/BookService";
 import { Loader2, BookOpen, Sparkles } from "lucide-react";
 
 // ENHANCED NAVY BLUE COLOR SCHEME

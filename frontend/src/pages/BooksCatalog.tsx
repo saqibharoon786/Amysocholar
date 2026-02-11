@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BookService, Book } from "@/services/bookService";
+import { BookService, Book } from "@/services/BookService";
 import { Loader2, Search, Grid, List } from "lucide-react";
 
 const BooksCatalog = () => {

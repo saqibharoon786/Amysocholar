@@ -1,7 +1,7 @@
 import { Facebook, Instagram } from "lucide-react";
 import { FaTwitter } from "react-icons/fa";
 import { useState, useEffect } from "react";
-import { BookService, Author, Book } from "@/services/bookService";
+import { BookService, Author, Book } from "@/services/BookService";
 import { Loader2 } from "lucide-react";
 
 const BestAuthor = () => {

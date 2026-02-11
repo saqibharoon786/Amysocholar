@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Eye, CheckCircle, XCircle, Filter, Search, Download, User, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { BookService, Book } from "@/services/bookService";
+import { BookService, Book } from "@/services/BookService";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Dialog,

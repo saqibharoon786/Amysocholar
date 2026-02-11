@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { BookService } from "@/services/bookService";
+import { BookService } from "@/services/BookService";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Loader2,
