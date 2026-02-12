@@ -8,6 +8,8 @@ import { AuthProvider } from "./contexts/AuthContext";
 import PublicRoutes from "./routes/PublicRoutes";
 import AdminRoutes from "./routes/AdminRoutes";
 import SuperAdminRoutes from "./routes/SuperAdminRoutes";
+import Auth from "@/pages/Auth";
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,7 +31,7 @@ const App = () => (
           <Routes>
             {/* Public */}
             <Route path="/*" element={<PublicRoutes />} />
-
+<Route path="/auth" element={<Auth />} />
             {/* Admin */}
             <Route path="/admin/*" element={<AdminRoutes />} />
 

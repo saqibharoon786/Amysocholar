@@ -1,5 +1,6 @@
 // components/upload-judgment/UploadJudgmentForm.tsx
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +8,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { 
+  Badge 
+} from "@/components/ui/badge";
 import { 
   Upload, 
   FileText, 
@@ -23,8 +35,49 @@ import {
   X,
   Eye,
   Download,
-  Check
+  Check,
+  Search,
+  Filter,
+  Plus,
+  Loader2,
+  MoreVertical,
+  Trash2,
+  Edit,
+  ExternalLink,
+  AlertTriangle,
+  Bold,
+  Italic,
+  Underline,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
+  List,
+  ListOrdered,
+  Undo,
+  Redo,
+  Type,
+  FileEdit
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface UploadJudgmentFormProps {
   isLoading: boolean;
@@ -66,12 +119,14 @@ const CATEGORIES = [
 ];
 
 const CURRENCIES = ["PKR", "USD"];
+const TEXT_FORMATS = ["plain", "html", "markdown"];
 
 const STEPS = [
   { id: 'case-info', title: 'Case Information', icon: Scale },
   { id: 'details', title: 'Details', icon: Calendar },
   { id: 'pricing', title: 'Pricing', icon: Tag },
   { id: 'documents', title: 'Documents', icon: FileText },
+  { id: 'content', title: 'Judgment Content', icon: FileEdit },
 ];
 
 interface CoverImage {
@@ -83,7 +138,34 @@ interface CoverImage {
 interface FilePreview {
   file: File;
   previewUrl: string;
-  type: 'pdf' | 'text';
+  type: 'pdf';
+}
+
+interface Judgment {
+  _id: string;
+  citation: string;
+  caseNumber?: string;
+  parties: string;
+  caseTitle: string;
+  court: string;
+  judge?: string;
+  caseType: string;
+  category: string;
+  year: number;
+  decisionDate?: string;
+  keywords: string[];
+  summary?: string;
+  content?: string;
+  contentFormat?: string;
+  price: number;
+  currency: string;
+  pdfFile?: string;
+  uploader: any;
+  viewCount: number;
+  purchaseCount: number;
+  isFeatured: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const UploadJudgmentForm = ({
@@ -92,6 +174,7 @@ const UploadJudgmentForm = ({
   onCancel,
   userRole,
 }: UploadJudgmentFormProps) => {
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     citation: "",
@@ -106,24 +189,164 @@ const UploadJudgmentForm = ({
     decisionDate: "",
     keywords: "",
     summary: "",
+    content: "",
+    contentFormat: "plain" as "plain" | "html" | "markdown",
     price: "",
     currency: "PKR",
   });
 
   const [coverImages, setCoverImages] = useState<CoverImage[]>([]);
   const [pdfFile, setPdfFile] = useState<FilePreview | null>(null);
-  const [textFile, setTextFile] = useState<FilePreview | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [previewDialog, setPreviewDialog] = useState<{
     open: boolean;
-    type: 'pdf' | 'text' | 'image';
+    type: 'pdf' | 'image';
     url: string;
     name: string;
   }>({ open: false, type: 'image', url: '', name: '' });
 
+  // Judgments Table State
+  const [showForm, setShowForm] = useState(false);
+  const [judgments, setJudgments] = useState<Judgment[]>([]);
+  const [loadingJudgments, setLoadingJudgments] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [tableFilters, setTableFilters] = useState({
+    court: "",
+    caseType: "",
+    category: "",
+    year: "",
+  });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedJudgment, setSelectedJudgment] = useState<Judgment | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   const pdfFileRef = useRef<HTMLInputElement>(null);
-  const textFileRef = useRef<HTMLInputElement>(null);
   const coverImagesRef = useRef<HTMLInputElement>(null);
+  const textEditorRef = useRef<HTMLDivElement>(null);
+
+  // Fix: Define judgment service API call (replace with your actual API)
+  const fetchJudgmentsFromAPI = async () => {
+    try {
+      // Replace this with your actual API call
+      // const response = await fetch('/api/judgments/get-all-judgment');
+      // const data = await response.json();
+      // return data.judgments || [];
+      
+      // Mock data for now
+      return [
+        {
+          _id: "1",
+          citation: "PLD 2024 SC 1",
+          caseNumber: "C.P. 1/2024",
+          parties: "State vs Defendant",
+          caseTitle: "Constitutional Petition",
+          court: "Supreme Court of Pakistan",
+          judge: "Justice Ali Khan",
+          caseType: "Constitutional",
+          category: "Constitutional Law",
+          year: 2024,
+          decisionDate: "2024-01-15",
+          keywords: ["constitution", "rights", "petition"],
+          summary: "This is a constitutional petition regarding fundamental rights...",
+          content: "<h1>Judgment Content</h1><p>This is the full judgment text...</p>",
+          contentFormat: "html",
+          price: 1000,
+          currency: "PKR",
+          pdfFile: "document.pdf",
+          uploader: { name: "Admin", email: "admin@example.com" },
+          viewCount: 150,
+          purchaseCount: 25,
+          isFeatured: true,
+          createdAt: "2024-01-20T10:30:00Z",
+          updatedAt: "2024-01-20T10:30:00Z"
+        },
+        {
+          _id: "2",
+          citation: "PLD 2023 HC 45",
+          caseNumber: "A.P. 45/2023",
+          parties: "Company vs Employee",
+          caseTitle: "Employment Dispute",
+          court: "High Court",
+          judge: "Justice Sara Ahmed",
+          caseType: "Labor",
+          category: "Labor Law",
+          year: 2023,
+          decisionDate: "2023-11-20",
+          keywords: ["employment", "termination", "compensation"],
+          summary: "Case regarding wrongful termination and compensation...",
+          content: "<h1>Judgment</h1><p>Employment dispute judgment text...</p>",
+          contentFormat: "html",
+          price: 500,
+          currency: "PKR",
+          pdfFile: "document2.pdf",
+          uploader: { name: "Admin", email: "admin@example.com" },
+          viewCount: 89,
+          purchaseCount: 12,
+          isFeatured: false,
+          createdAt: "2023-11-25T14:20:00Z",
+          updatedAt: "2023-11-25T14:20:00Z"
+        }
+      ];
+    } catch (error) {
+      console.error("Error fetching judgments:", error);
+      return [];
+    }
+  };
+
+  // Fetch judgments from API
+  const fetchJudgments = async () => {
+    try {
+      setLoadingJudgments(true);
+      const data = await fetchJudgmentsFromAPI();
+      
+      // Filter judgments based on search and filters
+      let filtered = data;
+      
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        filtered = filtered.filter(j => 
+          j.citation.toLowerCase().includes(term) ||
+          j.caseNumber?.toLowerCase().includes(term) ||
+          j.parties.toLowerCase().includes(term) ||
+          j.caseTitle.toLowerCase().includes(term) ||
+          j.summary?.toLowerCase().includes(term)
+        );
+      }
+      
+      if (tableFilters.court) {
+        filtered = filtered.filter(j => j.court === tableFilters.court);
+      }
+      
+      if (tableFilters.caseType) {
+        filtered = filtered.filter(j => j.caseType === tableFilters.caseType);
+      }
+      
+      if (tableFilters.category) {
+        filtered = filtered.filter(j => j.category === tableFilters.category);
+      }
+      
+      if (tableFilters.year) {
+        filtered = filtered.filter(j => j.year.toString() === tableFilters.year);
+      }
+      
+      setJudgments(filtered);
+    } catch (error) {
+      console.error("Error fetching judgments:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load judgments",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingJudgments(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!showForm) {
+      fetchJudgments();
+    }
+  }, [tableFilters, searchTerm, showForm]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -177,20 +400,6 @@ const UploadJudgmentForm = ({
     setFormErrors(prev => ({ ...prev, pdfFile: '' }));
   };
 
-  const handleTextFileChange = (file: File | null) => {
-    if (textFile?.previewUrl) {
-      URL.revokeObjectURL(textFile.previewUrl);
-    }
-
-    if (file) {
-      const previewUrl = URL.createObjectURL(file);
-      setTextFile({ file, previewUrl, type: 'text' });
-    } else {
-      setTextFile(null);
-    }
-    setFormErrors(prev => ({ ...prev, textFile: '' }));
-  };
-
   const handleCoverImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     handleCoverImagesChange(e.target.files);
     if (coverImagesRef.current) {
@@ -198,70 +407,79 @@ const UploadJudgmentForm = ({
     }
   };
 
-  const handleCoverImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const files = e.dataTransfer.files;
-    handleCoverImagesChange(files);
-  };
+  // Rich text editor functions
+  const executeCommand = useCallback((command: string, value: string = '') => {
+    document.execCommand(command, false, value);
+    if (textEditorRef.current) {
+      const content = textEditorRef.current.innerHTML;
+      setFormData(prev => ({ ...prev, content }));
+    }
+  }, []);
 
-  const handleCoverImageDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-  };
+  const handleEditorChange = useCallback(() => {
+    if (textEditorRef.current) {
+      const content = textEditorRef.current.innerHTML;
+      setFormData(prev => ({ ...prev, content }));
+    }
+  }, []);
 
-  const previewFile = (type: 'pdf' | 'text' | 'image', url: string, name: string) => {
-    setPreviewDialog({ open: true, type, url, name });
-  };
+  const clearFormatting = useCallback(() => {
+    executeCommand('removeFormat');
+    executeCommand('unlink');
+  }, [executeCommand]);
 
   const validateStep = (step: number): boolean => {
     const errors: Record<string, string> = {};
 
     switch (step) {
       case 0:
-        if (!formData.citation) errors.citation = "Citation is required";
-        if (!formData.caseNumber) errors.caseNumber = "Case number is required";
-        if (!formData.parties) errors.parties = "Parties are required";
+        if (!formData.citation.trim()) errors.citation = "Citation is required";
+        if (!formData.caseNumber.trim()) errors.caseNumber = "Case number is required";
+        if (!formData.parties.trim()) errors.parties = "Parties are required";
         if (!formData.court) errors.court = "Court is required";
         if (!formData.caseType) errors.caseType = "Case type is required";
         if (!formData.category) errors.category = "Category is required";
         break;
       
       case 1:
-        if (!formData.year) errors.year = "Year is required";
-        if (!formData.summary) errors.summary = "Summary is required";
+        if (!formData.year.trim()) errors.year = "Year is required";
+        if (parseInt(formData.year) < 1900 || parseInt(formData.year) > new Date().getFullYear()) {
+          errors.year = "Year must be between 1900 and current year";
+        }
+        if (!formData.summary.trim()) errors.summary = "Summary is required";
+        if (formData.summary.length < 50) errors.summary = "Summary must be at least 50 characters";
         break;
       
       case 2:
-        if (!formData.price) errors.price = "Price is required";
-        if (formData.price && parseFloat(formData.price) < 0) errors.price = "Price cannot be negative";
+        if (!formData.price.trim()) errors.price = "Price is required";
+        const price = parseFloat(formData.price);
+        if (isNaN(price) || price < 0) errors.price = "Price must be a valid positive number";
+        if (price > 1000000) errors.price = "Price cannot exceed 1,000,000";
         break;
       
       case 3:
         if (!pdfFile) errors.pdfFile = "PDF file is required";
-        if (!textFile) errors.textFile = "Text file is required";
         
-        // Validate file types
-        if (pdfFile && !pdfFile.file.type.includes('pdf')) {
-          errors.pdfFile = "Please upload a valid PDF file";
-        }
-        if (textFile && !textFile.file.name.endsWith('.txt')) {
-          errors.textFile = "Please upload a valid text file (.txt)";
-        }
-        
-        // Validate file sizes
-        if (pdfFile && pdfFile.file.size > 50 * 1024 * 1024) {
-          errors.pdfFile = "PDF file size must be less than 50MB";
-        }
-        if (textFile && textFile.file.size > 10 * 1024 * 1024) {
-          errors.textFile = "Text file size must be less than 10MB";
+        if (pdfFile) {
+          if (!pdfFile.file.type.includes('pdf')) {
+            errors.pdfFile = "Please upload a valid PDF file";
+          }
+          if (pdfFile.file.size > 50 * 1024 * 1024) {
+            errors.pdfFile = "PDF file size must be less than 50MB";
+          }
         }
 
-        // Validate cover images
         if (coverImages.length > 0) {
           const oversizedCover = coverImages.find(img => img.file.size > 5 * 1024 * 1024);
           if (oversizedCover) {
             errors.coverImages = 'Cover images must be less than 5MB each';
           }
         }
+        break;
+      
+      case 4:
+        if (!formData.content.trim()) errors.content = "Judgment content is required";
+        if (formData.content.length < 100) errors.content = "Judgment content must be at least 100 characters";
         break;
     }
 
@@ -279,30 +497,55 @@ const UploadJudgmentForm = ({
     setCurrentStep(prev => Math.max(prev - 1, 0));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (validateStep(currentStep)) {
-      const submitData = new FormData();
-      
-      // Append all form data
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          submitData.append(key, value.toString());
-        }
+    if (!validateStep(4)) {
+      toast({
+        title: "Validation Error",
+        description: "Please fix all errors before submitting",
+        variant: "destructive",
       });
-
-      // Append cover images
-      coverImages.forEach((image) => {
-        submitData.append('coverImages', image.file);
-      });
-
-      // Append files
-      if (pdfFile) submitData.append('pdfFile', pdfFile.file);
-      if (textFile) submitData.append('textFile', textFile.file);
-
-      onSubmit(submitData);
+      return;
     }
+
+    // Create FormData
+    const formDataToSend = new FormData();
+    
+    // Add all form fields
+    formDataToSend.append('citation', formData.citation.trim());
+    formDataToSend.append('caseNumber', formData.caseNumber.trim());
+    formDataToSend.append('parties', formData.parties.trim());
+    formDataToSend.append('caseTitle', formData.caseTitle.trim());
+    formDataToSend.append('court', formData.court);
+    formDataToSend.append('judge', formData.judge.trim());
+    formDataToSend.append('caseType', formData.caseType);
+    formDataToSend.append('category', formData.category);
+    formDataToSend.append('year', formData.year.toString());
+    formDataToSend.append('decisionDate', formData.decisionDate || '');
+    formDataToSend.append('keywords', formData.keywords.trim());
+    formDataToSend.append('summary', formData.summary.trim());
+    formDataToSend.append('content', formData.content.trim());
+    // Backend expects `textContent` field name for the judgment text
+    formDataToSend.append('textContent', formData.content.trim());
+    formDataToSend.append('contentFormat', formData.contentFormat);
+    formDataToSend.append('price', formData.price.toString());
+    formDataToSend.append('currency', formData.currency);
+
+    // Add files
+    if (pdfFile?.file) {
+      formDataToSend.append('pdfFile', pdfFile.file, pdfFile.file.name);
+    }
+    
+    // Add cover images
+    coverImages.forEach((image) => {
+      if (image.file) {
+        formDataToSend.append('coverImages', image.file, image.file.name);
+      }
+    });
+
+    console.log('Calling onSubmit with FormData');
+    onSubmit(formDataToSend);
   };
 
   const getProgressPercentage = () => {
@@ -317,20 +560,556 @@ const UploadJudgmentForm = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const previewFile = (type: 'pdf' | 'image', url: string, name: string) => {
+    setPreviewDialog({ open: true, type, url, name });
+  };
+
+  // Table functions
+  const handleTableFilterChange = (key: string, value: string) => {
+    setTableFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const clearTableFilters = () => {
+    setTableFilters({
+      court: "",
+      caseType: "",
+      category: "",
+      year: "",
+    });
+    setSearchTerm("");
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const formatCurrency = (amount: number, currency: string) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency || 'PKR',
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const getStatusBadge = (judgment: Judgment) => {
+    if (judgment.isFeatured) {
+      return (
+        <Badge className="bg-purple-500 hover:bg-purple-600 text-white">
+          Featured
+        </Badge>
+      );
+    }
+    if (judgment.price === 0) {
+      return (
+        <Badge className="bg-green-500 hover:bg-green-600 text-white">
+          Free
+        </Badge>
+      );
+    }
+    return null;
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      setDeletingId(id);
+      // Replace with actual API call
+      // await judgmentService.deleteJudgment(id);
+      
+      toast({
+        title: "Success",
+        description: "Judgment deleted successfully",
+      });
+      
+      // Refresh judgments
+      fetchJudgments();
+    } catch (error) {
+      console.error("Error deleting judgment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete judgment",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingId(null);
+      setDeleteDialogOpen(false);
+    }
+  };
+
+  // Fix: Handle cancel properly
+  const handleCancel = () => {
+    setShowForm(false);
+    onCancel(); // Call the original onCancel prop if needed
+  };
+
+  // Render table view
+  if (!showForm) {
+    return (
+      <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#0f1729' }}>
+        {/* Header */}
+        <div className="px-4 sm:px-6 py-4" style={{ 
+          backgroundColor: '#1a2234',
+          borderBottom: '1px solid rgba(100, 116, 139, 0.15)'
+        }}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 ">
+            <div className="flex items-center gap-3">
+              <div 
+                className="p-2 rounded-xl"
+                style={{ 
+                  backgroundColor: '#2d3748',
+                  border: '1px solid rgba(100, 116, 139, 0.2)'
+                }}
+              >
+                <Gavel className="h-6 w-6" style={{ color: '#94a3b8' }} />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#f1f5f9' }}>
+                  All Judgments
+                </h1>
+                <p className="text-sm" style={{ color: '#94a3b8' }}>
+                  Manage and view all judgments in the system
+                </p>
+              </div>
+            </div>
+            
+            <Button
+              onClick={() => setShowForm(true)}
+              className="h-11 px-8 rounded-lg shadow-sm hover:shadow-md transition-all duration-300"
+              style={{
+                backgroundColor: '#2d3748',
+                color: '#f1f5f9',
+                border: '1px solid rgba(100, 116, 139, 0.3)'
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add New Judgment
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex-1 p-4 sm:p-6 overflow-auto">
+          <div className="h-full w-full space-y-6">
+            {/* Search and Filters */}
+            <Card className="rounded-2xl" style={{
+              backgroundColor: '#1a2234',
+              border: '1px solid rgba(100, 116, 139, 0.15)'
+            }}>
+              <CardContent className="p-6">
+                <div className="space-y-4">
+                  {/* Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4" style={{ color: '#94a3b8' }} />
+                    <Input
+                      placeholder="Search by citation, case number, parties..."
+                      className="pl-9 h-11 rounded-lg"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      style={{
+                        backgroundColor: '#1f2937',
+                        borderColor: '#374151',
+                        color: '#f1f5f9'
+                      }}
+                    />
+                  </div>
+
+                  {/* Filters - FIXED: Proper Select components */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                    {/* Court Select */}
+                    <Select
+                      value={tableFilters.court}
+                      onValueChange={(value) => handleTableFilterChange("court", value)}
+                    >
+                      <SelectTrigger className="h-11 rounded-lg" style={{
+                        backgroundColor: '#1f2937',
+                        borderColor: '#374151',
+                        color: '#f1f5f9'
+                      }}>
+                        <SelectValue placeholder="Court" />
+                      </SelectTrigger>
+                      <SelectContent style={{
+                        backgroundColor: '#1f2937',
+                        borderColor: '#374151',
+                        color: '#f1f5f9'
+                      }}>
+                        <SelectItem key="all-courts" value="all">All Courts</SelectItem>
+                        {COURTS.map((court) => (
+                          <SelectItem key={court} value={court}>
+                            {court}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Case Type Select */}
+                    <Select
+                      value={tableFilters.caseType}
+                      onValueChange={(value) => handleTableFilterChange("caseType", value)}
+                    >
+                      <SelectTrigger className="h-11 rounded-lg" style={{
+                        backgroundColor: '#1f2937',
+                        borderColor: '#374151',
+                        color: '#f1f5f9'
+                      }}>
+                        <SelectValue placeholder="Case Type" />
+                      </SelectTrigger>
+                      <SelectContent style={{
+                        backgroundColor: '#1f2937',
+                        borderColor: '#374151',
+                        color: '#f1f5f9'
+                      }}>
+                        <SelectItem key="all-types" value="all">All Types</SelectItem>
+                        {CASE_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Category Select */}
+                    <Select
+                      value={tableFilters.category}
+                      onValueChange={(value) => handleTableFilterChange("category", value)}
+                    >
+                      <SelectTrigger className="h-11 rounded-lg" style={{
+                        backgroundColor: '#1f2937',
+                        borderColor: '#374151',
+                        color: '#f1f5f9'
+                      }}>
+                        <SelectValue placeholder="Category" />
+                      </SelectTrigger>
+                      <SelectContent style={{
+                        backgroundColor: '#1f2937',
+                        borderColor: '#374151',
+                        color: '#f1f5f9'
+                      }}>
+                        <SelectItem key="all-categories" value="all">All Categories</SelectItem>
+                        {CATEGORIES.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Year Input */}
+                    <Input
+                      type="number"
+                      placeholder="Year"
+                      className="h-11 rounded-lg"
+                      value={tableFilters.year}
+                      onChange={(e) => handleTableFilterChange("year", e.target.value)}
+                      min="1900"
+                      max={new Date().getFullYear()}
+                      style={{
+                        backgroundColor: '#1f2937',
+                        borderColor: '#374151',
+                        color: '#f1f5f9'
+                      }}
+                    />
+
+                    {/* Clear Filters Button */}
+                    <Button
+                      variant="outline"
+                      onClick={clearTableFilters}
+                      className="h-11 rounded-lg w-full"
+                      style={{
+                        backgroundColor: '#1f2937',
+                        borderColor: '#374151',
+                        color: '#cbd5e1'
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Table */}
+            <Card className="rounded-2xl" style={{
+              backgroundColor: '#1a2234',
+              border: '1px solid rgba(100, 116, 139, 0.15)'
+            }}>
+              <CardContent className="p-0">
+                <div className="relative overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow style={{ backgroundColor: '#1e293b' }}>
+                        <TableHead style={{ color: '#cbd5e1' }}>Citation</TableHead>
+                        <TableHead style={{ color: '#cbd5e1' }}>Case Details</TableHead>
+                        <TableHead style={{ color: '#cbd5e1' }}>Court & Type</TableHead>
+                        <TableHead style={{ color: '#cbd5e1' }}>Price</TableHead>
+                        <TableHead style={{ color: '#cbd5e1' }}>Stats</TableHead>
+                        <TableHead style={{ color: '#cbd5e1' }}>Uploaded</TableHead>
+                        <TableHead style={{ color: '#cbd5e1' }} className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {loadingJudgments ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-8">
+                            <div className="flex items-center justify-center space-x-2">
+                              <Loader2 className="h-6 w-6 animate-spin" style={{ color: '#94a3b8' }} />
+                              <span style={{ color: '#94a3b8' }}>Loading judgments...</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : judgments.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-8">
+                            <div className="flex flex-col items-center justify-center space-y-2">
+                              <AlertTriangle className="h-12 w-12" style={{ color: '#94a3b8' }} />
+                              <p style={{ color: '#94a3b8' }}>No judgments found</p>
+                              <Button
+                                variant="outline"
+                                onClick={() => setShowForm(true)}
+                                size="sm"
+                                style={{
+                                  backgroundColor: '#1f2937',
+                                  borderColor: '#374151',
+                                  color: '#cbd5e1'
+                                }}
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add First Judgment
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        judgments.map((judgment) => (
+                          <TableRow key={judgment._id} style={{ borderColor: 'rgba(100, 116, 139, 0.15)' }}>
+                            <TableCell>
+                              <div className="space-y-1">
+                                <div className="font-medium" style={{ color: '#f1f5f9' }}>
+                                  {judgment.citation}
+                                </div>
+                                <div style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                                  {judgment.caseNumber}
+                                </div>
+                                {getStatusBadge(judgment)}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                <div className="font-medium" style={{ color: '#f1f5f9' }}>
+                                  {judgment.parties}
+                                </div>
+                                <div style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                                  {judgment.caseTitle}
+                                </div>
+                                <div className="flex items-center" style={{ color: '#94a3b8', fontSize: '0.75rem' }}>
+                                  <Calendar className="h-3 w-3 mr-1" />
+                                  {judgment.year}
+                                  {judgment.decisionDate && (
+                                    <>
+                                      <span className="mx-1">•</span>
+                                      {formatDate(judgment.decisionDate)}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                <div className="font-medium" style={{ color: '#f1f5f9' }}>
+                                  {judgment.court}
+                                </div>
+                                <div style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                                  {judgment.caseType}
+                                </div>
+                                <Badge variant="outline" className="text-xs" style={{
+                                  backgroundColor: '#1f2937',
+                                  borderColor: '#374151',
+                                  color: '#cbd5e1'
+                                }}>
+                                  {judgment.category}
+                                </Badge>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="font-medium" style={{ color: '#f1f5f9' }}>
+                                {formatCurrency(judgment.price, judgment.currency)}
+                              </div>
+                              <div style={{ color: '#94a3b8', fontSize: '0.75rem' }}>
+                                {judgment.currency}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                <div className="flex items-center" style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                                  <Eye className="h-3 w-3 mr-1" />
+                                  {judgment.viewCount || 0} views
+                                </div>
+                                <div className="flex items-center" style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                                  <Download className="h-3 w-3 mr-1" />
+                                  {judgment.purchaseCount || 0} purchases
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                                {formatDate(judgment.createdAt)}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex justify-end">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm"
+                                      style={{
+                                        backgroundColor: 'transparent',
+                                        color: '#cbd5e1'
+                                      }}
+                                    >
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" style={{
+                                    backgroundColor: '#1a2234',
+                                    borderColor: '#374151',
+                                    color: '#f1f5f9'
+                                  }}>
+                                    <DropdownMenuLabel style={{ color: '#cbd5e1' }}>Actions</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem style={{ color: '#cbd5e1' }}>
+                                      <Eye className="h-4 w-4 mr-2" />
+                                      View Details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem style={{ color: '#cbd5e1' }}>
+                                      <FileText className="h-4 w-4 mr-2" />
+                                      Read Judgment
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem style={{ color: '#cbd5e1' }}>
+                                      <Download className="h-4 w-4 mr-2" />
+                                      Download PDF
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    {userRole === "superadmin" && (
+                                      <>
+                                        <DropdownMenuItem style={{ color: '#cbd5e1' }}>
+                                          <Edit className="h-4 w-4 mr-2" />
+                                          Edit
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          className="text-red-600"
+                                          onClick={() => {
+                                            setSelectedJudgment(judgment);
+                                            setDeleteDialogOpen(true);
+                                          }}
+                                          style={{ color: '#ef4444' }}
+                                        >
+                                          <Trash2 className="h-4 w-4 mr-2" />
+                                          Delete
+                                        </DropdownMenuItem>
+                                      </>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Add New Judgment Button at Bottom */}
+            <div className="flex justify-center pt-4">
+              <Button
+                onClick={() => setShowForm(true)}
+                className="h-11 px-8 rounded-lg shadow-sm hover:shadow-md transition-all duration-300"
+                style={{
+                  backgroundColor: '#2d3748',
+                  color: '#f1f5f9',
+                  border: '1px solid rgba(100, 116, 139, 0.3)'
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add New Judgment
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent style={{
+            backgroundColor: '#1a2234',
+            borderColor: '#374151',
+            color: '#f1f5f9'
+          }}>
+            <AlertDialogHeader>
+              <AlertDialogTitle style={{ color: '#f1f5f9' }}>Delete Judgment</AlertDialogTitle>
+              <AlertDialogDescription style={{ color: '#94a3b8' }}>
+                Are you sure you want to delete "{selectedJudgment?.citation}"? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel 
+                disabled={deletingId === selectedJudgment?._id}
+                style={{
+                  backgroundColor: '#1f2937',
+                  borderColor: '#374151',
+                  color: '#cbd5e1'
+                }}
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => selectedJudgment && handleDelete(selectedJudgment._id)}
+                disabled={deletingId === selectedJudgment?._id}
+                style={{ backgroundColor: '#ef4444', color: '#ffffff' }}
+              >
+                {deletingId === selectedJudgment?._id ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
+  }
+
+  // Render upload form view
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-25 flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#0f1729' }}>
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-red-100 px-4 sm:px-6 py-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 max-w-7xl mx-auto">
+      <div className="px-4 sm:px-6 py-4" style={{ 
+        backgroundColor: '#1a2234',
+        borderBottom: '1px solid rgba(100, 116, 139, 0.15)'
+      }}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-red-100 to-red-200 rounded-xl shadow-sm">
-              <Gavel className="h-6 w-6 text-red-700" />
+            <div 
+              className="p-2 rounded-xl"
+              style={{ 
+                backgroundColor: '#2d3748',
+                border: '1px solid rgba(100, 116, 139, 0.2)'
+              }}
+            >
+              <Gavel className="h-6 w-6" style={{ color: '#94a3b8' }} />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#f1f5f9' }}>
                 Upload New Judgment
               </h1>
-              <p className="text-gray-600 text-sm">
+              <p className="text-sm" style={{ color: '#94a3b8' }}>
                 {userRole === "superadmin" 
                   ? "Judgment will be automatically approved and published" 
                   : "Judgment will be sent for super admin approval"}
@@ -340,37 +1119,61 @@ const UploadJudgmentForm = ({
           
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <div className="text-xs text-gray-500 uppercase tracking-wide">Progress</div>
-              <div className="text-lg font-bold text-red-700">{Math.round(getProgressPercentage())}%</div>
+              <div className="text-xs uppercase tracking-wide" style={{ color: '#94a3b8' }}>Progress</div>
+              <div className="text-lg font-bold" style={{ color: '#f1f5f9' }}>{Math.round(getProgressPercentage())}%</div>
             </div>
+            <Button
+              type="button"
+              onClick={handleCancel}
+              variant="outline"
+              className="h-11 px-6 rounded-lg transition-colors"
+              style={{ 
+                color: '#cbd5e1',
+                borderColor: '#374151',
+                backgroundColor: '#1f2937'
+              }}
+            >
+              View All Judgments
+            </Button>
           </div>
         </div>
       </div>
 
+      {/* Rest of your existing upload form code */}
       <div className="flex-1 p-4 sm:p-6 overflow-hidden">
-        <div className="h-full flex flex-col max-w-7xl mx-auto w-full">
+        <div className="h-full flex flex-col w-full">
           {/* Progress Steps */}
           <div className="mb-6">
-            <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-red-100">
+            <div className="p-4 sm:p-6 rounded-2xl" style={{ 
+              backgroundColor: '#1e293b',
+              border: '1px solid rgba(100, 116, 139, 0.2)'
+            }}>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
-                <div className="text-sm text-gray-600 font-medium">
+                <div className="text-sm font-medium" style={{ color: '#94a3b8' }}>
                   Step {currentStep + 1} of {STEPS.length}
                 </div>
-                <div className="text-sm font-semibold text-red-700">
+                <div className="text-sm font-semibold" style={{ color: '#f1f5f9' }}>
                   {Math.round(getProgressPercentage())}% Complete
                 </div>
               </div>
               
               {/* Progress Bar */}
-              <div className="w-full bg-red-100 rounded-full h-2.5 mb-6 shadow-inner">
+              <div className="w-full h-2.5 mb-6 rounded-full" style={{ 
+                backgroundColor: '#374151',
+                boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.1)'
+              }}>
                 <div 
-                  className="bg-gradient-to-r from-red-600 to-red-700 h-2.5 rounded-full transition-all duration-500 shadow-sm"
-                  style={{ width: `${getProgressPercentage()}%` }}
+                  className="h-2.5 rounded-full transition-all duration-500"
+                  style={{ 
+                    width: `${getProgressPercentage()}%`,
+                    background: 'linear-gradient(90deg, #4b5563 0%, #6b7280 100%)',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+                  }}
                 ></div>
               </div>
 
               {/* Step Indicators */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                 {STEPS.map((step, index) => {
                   const Icon = step.icon;
                   const isActive = index === currentStep;
@@ -378,23 +1181,26 @@ const UploadJudgmentForm = ({
                   
                   return (
                     <div key={step.id} className="flex flex-col items-center">
-                      <div className={`flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl border-2 transition-all duration-300 shadow-sm ${
-                        isActive 
-                          ? 'bg-red-600 border-red-600 text-white shadow-md scale-105' 
-                          : isCompleted
-                          ? 'bg-green-500 border-green-500 text-white shadow-sm'
-                          : 'bg-white border-red-200 text-gray-400'
-                      }`}>
+                      <div 
+                        className={`flex items-center justify-center w-12 h-12 rounded-xl border-2 transition-all duration-300 ${isActive ? 'shadow-md scale-105' : isCompleted ? 'shadow-sm' : ''}`}
+                        style={{
+                          backgroundColor: isActive ? '#2d3748' : isCompleted ? '#374151' : '#1f2937',
+                          borderColor: isActive ? '#4b5563' : isCompleted ? '#10b981' : '#374151',
+                          color: isActive ? '#f1f5f9' : isCompleted ? '#10b981' : '#9ca3af'
+                        }}
+                      >
                         {isCompleted ? (
-                          <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6" />
+                          <CheckCircle className="h-6 w-6" />
                         ) : (
-                          <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                          <Icon className="h-5 w-5" />
                         )}
                       </div>
-                      <span className={`text-xs sm:text-sm mt-2 font-medium text-center ${
-                        isActive ? 'text-red-700 font-semibold' : 
-                        isCompleted ? 'text-green-600' : 'text-gray-500'
-                      }`}>
+                      <span 
+                        className="text-xs sm:text-sm mt-2 font-medium text-center"
+                        style={{ 
+                          color: isActive ? '#f1f5f9' : isCompleted ? '#d1d5db' : '#9ca3af'
+                        }}
+                      >
                         {step.title}
                       </span>
                     </div>
@@ -404,21 +1210,34 @@ const UploadJudgmentForm = ({
             </div>
           </div>
 
-          {/* Form Content */}
+          {/* Form Content - FIXED: Proper Select components */}
           <div className="flex-1 overflow-hidden">
-            <Card className="border border-red-100 shadow-lg bg-white h-full flex flex-col rounded-2xl">
-              <CardHeader className="border-b border-red-100 pb-4 bg-gradient-to-r from-red-50 to-transparent">
+            <Card className="h-full flex flex-col rounded-2xl" style={{
+              backgroundColor: '#1a2234',
+              border: '1px solid rgba(100, 116, 139, 0.15)'
+            }}>
+              <CardHeader className="border-b pb-4" style={{ 
+                borderColor: 'rgba(100, 116, 139, 0.15)',
+                background: 'linear-gradient(90deg, rgba(30, 41, 59, 0.5) 0%, transparent 100%)'
+              }}>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-red-100 rounded-lg shadow-sm">
+                  <div 
+                    className="p-2 rounded-lg"
+                    style={{ 
+                      backgroundColor: '#2d3748',
+                      border: '1px solid rgba(100, 116, 139, 0.2)'
+                    }}
+                  >
                     {React.createElement(STEPS[currentStep].icon, { 
-                      className: "h-5 w-5 text-red-700"
+                      className: "h-5 w-5",
+                      style: { color: '#94a3b8' }
                     })}
                   </div>
                   <div>
-                    <CardTitle className="text-lg sm:text-xl text-gray-900">
+                    <CardTitle className="text-lg sm:text-xl" style={{ color: '#f1f5f9' }}>
                       {STEPS[currentStep].title}
                     </CardTitle>
-                    <CardDescription className="text-gray-600 text-sm">
+                    <CardDescription style={{ color: '#94a3b8' }}>
                       Please provide the required information for this step
                     </CardDescription>
                   </div>
@@ -426,7 +1245,7 @@ const UploadJudgmentForm = ({
               </CardHeader>
               
               <CardContent className="p-4 sm:p-6 flex-1 overflow-y-auto">
-                <form onSubmit={handleSubmit} className="space-y-6 h-full">
+                <form onSubmit={handleFormSubmit} className="space-y-6 h-full">
                   
                   {/* Step 1: Case Information */}
                   {currentStep === 0 && (
@@ -434,19 +1253,24 @@ const UploadJudgmentForm = ({
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                         <div className="space-y-4">
                           <div className="space-y-2">
-                            <Label htmlFor="citation" className="text-gray-700 font-medium flex items-center gap-1">
-                              Citation <span className="text-red-500">*</span>
+                            <Label htmlFor="citation" className="font-medium flex items-center gap-1" style={{ color: '#cbd5e1' }}>
+                              Citation <span style={{ color: '#ef4444' }}>*</span>
                             </Label>
                             <Input
                               id="citation"
                               value={formData.citation}
                               onChange={(e) => handleInputChange('citation', e.target.value)}
                               required
-                              className="border-gray-300 focus:border-red-400 focus:ring-red-200 h-11 rounded-lg transition-colors"
+                              className="h-11 rounded-lg transition-colors"
                               placeholder="e.g., PLD 2024 SC 1"
+                              style={{
+                                backgroundColor: '#1f2937',
+                                borderColor: '#374151',
+                                color: '#f1f5f9'
+                              }}
                             />
                             {formErrors.citation && (
-                              <p className="text-red-500 text-sm flex items-center gap-1 mt-1">
+                              <p className="text-sm flex items-center gap-1 mt-1" style={{ color: '#ef4444' }}>
                                 <AlertCircle className="h-3 w-3" />
                                 {formErrors.citation}
                               </p>
@@ -454,19 +1278,24 @@ const UploadJudgmentForm = ({
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="caseNumber" className="text-gray-700 font-medium flex items-center gap-1">
-                              Case Number <span className="text-red-500">*</span>
+                            <Label htmlFor="caseNumber" className="font-medium flex items-center gap-1" style={{ color: '#cbd5e1' }}>
+                              Case Number <span style={{ color: '#ef4444' }}>*</span>
                             </Label>
                             <Input
                               id="caseNumber"
                               value={formData.caseNumber}
                               onChange={(e) => handleInputChange('caseNumber', e.target.value)}
                               required
-                              className="border-gray-300 focus:border-red-400 focus:ring-red-200 h-11 rounded-lg transition-colors"
+                              className="h-11 rounded-lg transition-colors"
                               placeholder="Enter case number"
+                              style={{
+                                backgroundColor: '#1f2937',
+                                borderColor: '#374151',
+                                color: '#f1f5f9'
+                              }}
                             />
                             {formErrors.caseNumber && (
-                              <p className="text-red-500 text-sm flex items-center gap-1 mt-1">
+                              <p className="text-sm flex items-center gap-1 mt-1" style={{ color: '#ef4444' }}>
                                 <AlertCircle className="h-3 w-3" />
                                 {formErrors.caseNumber}
                               </p>
@@ -474,19 +1303,24 @@ const UploadJudgmentForm = ({
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="parties" className="text-gray-700 font-medium flex items-center gap-1">
-                              Parties <span className="text-red-500">*</span>
+                            <Label htmlFor="parties" className="font-medium flex items-center gap-1" style={{ color: '#cbd5e1' }}>
+                              Parties <span style={{ color: '#ef4444' }}>*</span>
                             </Label>
                             <Input
                               id="parties"
                               value={formData.parties}
                               onChange={(e) => handleInputChange('parties', e.target.value)}
                               required
-                              className="border-gray-300 focus:border-red-400 focus:ring-red-200 h-11 rounded-lg transition-colors"
+                              className="h-11 rounded-lg transition-colors"
                               placeholder="e.g., Plaintiff vs Defendant"
+                              style={{
+                                backgroundColor: '#1f2937',
+                                borderColor: '#374151',
+                                color: '#f1f5f9'
+                              }}
                             />
                             {formErrors.parties && (
-                              <p className="text-red-500 text-sm flex items-center gap-1 mt-1">
+                              <p className="text-sm flex items-center gap-1 mt-1" style={{ color: '#ef4444' }}>
                                 <AlertCircle className="h-3 w-3" />
                                 {formErrors.parties}
                               </p>
@@ -494,86 +1328,118 @@ const UploadJudgmentForm = ({
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="caseTitle" className="text-gray-700 font-medium">
+                            <Label htmlFor="caseTitle" className="font-medium" style={{ color: '#cbd5e1' }}>
                               Case Title
                             </Label>
                             <Input
                               id="caseTitle"
                               value={formData.caseTitle}
                               onChange={(e) => handleInputChange('caseTitle', e.target.value)}
-                              className="border-gray-300 focus:border-red-400 focus:ring-red-200 h-11 rounded-lg transition-colors"
+                              className="h-11 rounded-lg transition-colors"
                               placeholder="Enter case title"
+                              style={{
+                                backgroundColor: '#1f2937',
+                                borderColor: '#374151',
+                                color: '#f1f5f9'
+                              }}
                             />
                           </div>
                         </div>
 
                         <div className="space-y-4">
+                          {/* Court Select - FIXED */}
                           <div className="space-y-2">
-                            <Label htmlFor="court" className="text-gray-700 font-medium flex items-center gap-1">
-                              Court <span className="text-red-500">*</span>
+                            <Label htmlFor="court" className="font-medium flex items-center gap-1" style={{ color: '#cbd5e1' }}>
+                              Court <span style={{ color: '#ef4444' }}>*</span>
                             </Label>
                             <Select value={formData.court} onValueChange={(v) => handleInputChange('court', v)}>
-                              <SelectTrigger className="border-gray-300 focus:border-red-400 focus:ring-red-200 h-11 rounded-lg transition-colors">
+                              <SelectTrigger className="h-11 rounded-lg transition-colors" style={{
+                                backgroundColor: '#1f2937',
+                                borderColor: '#374151',
+                                color: '#f1f5f9'
+                              }}>
                                 <SelectValue placeholder="Select court" />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent style={{
+                                backgroundColor: '#1f2937',
+                                borderColor: '#374151',
+                                color: '#f1f5f9'
+                              }}>
                                 {COURTS.map(court => (
-                                  <SelectItem key={court} value={court}>
+                                  <SelectItem key={`court-${court}`} value={court}>
                                     {court}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
                             {formErrors.court && (
-                              <p className="text-red-500 text-sm flex items-center gap-1 mt-1">
+                              <p className="text-sm flex items-center gap-1 mt-1" style={{ color: '#ef4444' }}>
                                 <AlertCircle className="h-3 w-3" />
                                 {formErrors.court}
                               </p>
                             )}
                           </div>
 
+                          {/* Case Type Select - FIXED */}
                           <div className="space-y-2">
-                            <Label htmlFor="caseType" className="text-gray-700 font-medium flex items-center gap-1">
-                              Case Type <span className="text-red-500">*</span>
+                            <Label htmlFor="caseType" className="font-medium flex items-center gap-1" style={{ color: '#cbd5e1' }}>
+                              Case Type <span style={{ color: '#ef4444' }}>*</span>
                             </Label>
                             <Select value={formData.caseType} onValueChange={(v) => handleInputChange('caseType', v)}>
-                              <SelectTrigger className="border-gray-300 focus:border-red-400 focus:ring-red-200 h-11 rounded-lg transition-colors">
+                              <SelectTrigger className="h-11 rounded-lg transition-colors" style={{
+                                backgroundColor: '#1f2937',
+                                borderColor: '#374151',
+                                color: '#f1f5f9'
+                              }}>
                                 <SelectValue placeholder="Select case type" />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent style={{
+                                backgroundColor: '#1f2937',
+                                borderColor: '#374151',
+                                color: '#f1f5f9'
+                              }}>
                                 {CASE_TYPES.map(type => (
-                                  <SelectItem key={type} value={type}>
+                                  <SelectItem key={`type-${type}`} value={type}>
                                     {type}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
                             {formErrors.caseType && (
-                              <p className="text-red-500 text-sm flex items-center gap-1 mt-1">
+                              <p className="text-sm flex items-center gap-1 mt-1" style={{ color: '#ef4444' }}>
                                 <AlertCircle className="h-3 w-3" />
                                 {formErrors.caseType}
                               </p>
                             )}
                           </div>
 
+                          {/* Category Select - FIXED */}
                           <div className="space-y-2">
-                            <Label htmlFor="category" className="text-gray-700 font-medium flex items-center gap-1">
-                              Category <span className="text-red-500">*</span>
+                            <Label htmlFor="category" className="font-medium flex items-center gap-1" style={{ color: '#cbd5e1' }}>
+                              Category <span style={{ color: '#ef4444' }}>*</span>
                             </Label>
                             <Select value={formData.category} onValueChange={(v) => handleInputChange('category', v)}>
-                              <SelectTrigger className="border-gray-300 focus:border-red-400 focus:ring-red-200 h-11 rounded-lg transition-colors">
+                              <SelectTrigger className="h-11 rounded-lg transition-colors" style={{
+                                backgroundColor: '#1f2937',
+                                borderColor: '#374151',
+                                color: '#f1f5f9'
+                              }}>
                                 <SelectValue placeholder="Select category" />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent style={{
+                                backgroundColor: '#1f2937',
+                                borderColor: '#374151',
+                                color: '#f1f5f9'
+                              }}>
                                 {CATEGORIES.map(category => (
-                                  <SelectItem key={category} value={category}>
+                                  <SelectItem key={`category-${category}`} value={category}>
                                     {category}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
                             {formErrors.category && (
-                              <p className="text-red-500 text-sm flex items-center gap-1 mt-1">
+                              <p className="text-sm flex items-center gap-1 mt-1" style={{ color: '#ef4444' }}>
                                 <AlertCircle className="h-3 w-3" />
                                 {formErrors.category}
                               </p>
@@ -581,15 +1447,20 @@ const UploadJudgmentForm = ({
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="judge" className="text-gray-700 font-medium">
+                            <Label htmlFor="judge" className="font-medium" style={{ color: '#cbd5e1' }}>
                               Judge
                             </Label>
                             <Input
                               id="judge"
                               value={formData.judge}
                               onChange={(e) => handleInputChange('judge', e.target.value)}
-                              className="border-gray-300 focus:border-red-400 focus:ring-red-200 h-11 rounded-lg transition-colors"
+                              className="h-11 rounded-lg transition-colors"
                               placeholder="Enter judge name"
+                              style={{
+                                backgroundColor: '#1f2937',
+                                borderColor: '#374151',
+                                color: '#f1f5f9'
+                              }}
                             />
                           </div>
                         </div>
@@ -604,8 +1475,8 @@ const UploadJudgmentForm = ({
                         <div className="space-y-4">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label htmlFor="year" className="text-gray-700 font-medium flex items-center gap-1">
-                                Year <span className="text-red-500">*</span>
+                              <Label htmlFor="year" className="font-medium flex items-center gap-1" style={{ color: '#cbd5e1' }}>
+                                Year <span style={{ color: '#ef4444' }}>*</span>
                               </Label>
                               <Input
                                 id="year"
@@ -613,13 +1484,18 @@ const UploadJudgmentForm = ({
                                 value={formData.year}
                                 onChange={(e) => handleInputChange('year', e.target.value)}
                                 required
-                                className="border-gray-300 focus:border-red-400 focus:ring-red-200 h-11 rounded-lg transition-colors"
+                                className="h-11 rounded-lg transition-colors"
                                 placeholder="2024"
                                 min="1900"
                                 max={new Date().getFullYear()}
+                                style={{
+                                  backgroundColor: '#1f2937',
+                                  borderColor: '#374151',
+                                  color: '#f1f5f9'
+                                }}
                               />
                               {formErrors.year && (
-                                <p className="text-red-500 text-sm flex items-center gap-1 mt-1">
+                                <p className="text-sm flex items-center gap-1 mt-1" style={{ color: '#ef4444' }}>
                                   <AlertCircle className="h-3 w-3" />
                                   {formErrors.year}
                                 </p>
@@ -627,7 +1503,7 @@ const UploadJudgmentForm = ({
                             </div>
 
                             <div className="space-y-2">
-                              <Label htmlFor="decisionDate" className="text-gray-700 font-medium">
+                              <Label htmlFor="decisionDate" className="font-medium" style={{ color: '#cbd5e1' }}>
                                 Decision Date
                               </Label>
                               <Input
@@ -635,28 +1511,38 @@ const UploadJudgmentForm = ({
                                 type="date"
                                 value={formData.decisionDate}
                                 onChange={(e) => handleInputChange('decisionDate', e.target.value)}
-                                className="border-gray-300 focus:border-red-400 focus:ring-red-200 h-11 rounded-lg transition-colors"
+                                className="h-11 rounded-lg transition-colors"
+                                style={{
+                                  backgroundColor: '#1f2937',
+                                  borderColor: '#374151',
+                                  color: '#f1f5f9'
+                                }}
                               />
                             </div>
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="keywords" className="text-gray-700 font-medium">
+                            <Label htmlFor="keywords" className="font-medium" style={{ color: '#cbd5e1' }}>
                               Keywords
                             </Label>
                             <Input
                               id="keywords"
                               value={formData.keywords}
                               onChange={(e) => handleInputChange('keywords', e.target.value)}
-                              className="border-gray-300 focus:border-red-400 focus:ring-red-200 h-11 rounded-lg transition-colors"
+                              className="h-11 rounded-lg transition-colors"
                               placeholder="Comma separated keywords"
+                              style={{
+                                backgroundColor: '#1f2937',
+                                borderColor: '#374151',
+                                color: '#f1f5f9'
+                              }}
                             />
                           </div>
                         </div>
 
                         <div className="space-y-2 h-full">
-                          <Label htmlFor="summary" className="text-gray-700 font-medium flex items-center gap-1">
-                            Summary <span className="text-red-500">*</span>
+                          <Label htmlFor="summary" className="font-medium flex items-center gap-1" style={{ color: '#cbd5e1' }}>
+                            Summary <span style={{ color: '#ef4444' }}>*</span>
                           </Label>
                           <Textarea
                             id="summary"
@@ -664,11 +1550,16 @@ const UploadJudgmentForm = ({
                             onChange={(e) => handleInputChange('summary', e.target.value)}
                             rows={12}
                             required
-                            className="border-gray-300 focus:border-red-400 focus:ring-red-200 resize-none h-full min-h-[300px] rounded-lg transition-colors"
+                            className="resize-none h-full min-h-[300px] rounded-lg transition-colors"
                             placeholder="Provide a detailed summary of the judgment..."
+                            style={{
+                              backgroundColor: '#1f2937',
+                              borderColor: '#374151',
+                              color: '#f1f5f9'
+                            }}
                           />
                           {formErrors.summary && (
-                            <p className="text-red-500 text-sm flex items-center gap-1 mt-1">
+                            <p className="text-sm flex items-center gap-1 mt-1" style={{ color: '#ef4444' }}>
                               <AlertCircle className="h-3 w-3" />
                               {formErrors.summary}
                             </p>
@@ -681,19 +1572,28 @@ const UploadJudgmentForm = ({
                   {/* Step 3: Pricing */}
                   {currentStep === 2 && (
                     <div className="space-y-6">
-                      <div className="max-w-md mx-auto bg-gradient-to-br from-red-50 to-red-25 rounded-2xl p-6 border border-red-100">
+                      <div className="max-w-md mx-auto rounded-2xl p-6" style={{ 
+                        backgroundColor: '#1e293b',
+                        border: '1px solid rgba(100, 116, 139, 0.2)'
+                      }}>
                         <div className="text-center mb-6">
-                          <div className="p-3 bg-red-100 rounded-full w-16 h-16 mx-auto flex items-center justify-center mb-4">
-                            <Tag className="h-8 w-8 text-red-700" />
+                          <div 
+                            className="p-3 rounded-full w-16 h-16 mx-auto flex items-center justify-center mb-4"
+                            style={{ 
+                              backgroundColor: '#2d3748',
+                              border: '1px solid rgba(100, 116, 139, 0.2)'
+                            }}
+                          >
+                            <Tag className="h-8 w-8" style={{ color: '#94a3b8' }} />
                           </div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">Set Judgment Price</h3>
-                          <p className="text-gray-600 text-sm">Set the price for accessing this judgment</p>
+                          <h3 className="text-lg font-semibold mb-2" style={{ color: '#f1f5f9' }}>Set Judgment Price</h3>
+                          <p className="text-sm" style={{ color: '#94a3b8' }}>Set the price for accessing this judgment</p>
                         </div>
                         
                         <div className="grid grid-cols-1 gap-4">
                           <div className="space-y-2">
-                            <Label htmlFor="price" className="text-gray-700 font-medium flex items-center gap-1">
-                              Price <span className="text-red-500">*</span>
+                            <Label htmlFor="price" className="font-medium flex items-center gap-1" style={{ color: '#cbd5e1' }}>
+                              Price <span style={{ color: '#ef4444' }}>*</span>
                             </Label>
                             <Input
                               id="price"
@@ -701,13 +1601,18 @@ const UploadJudgmentForm = ({
                               value={formData.price}
                               onChange={(e) => handleInputChange('price', e.target.value)}
                               required
-                              className="border-gray-300 focus:border-red-400 focus:ring-red-200 h-11 rounded-lg transition-colors text-center text-lg font-semibold"
+                              className="h-11 rounded-lg transition-colors text-center text-lg font-semibold"
                               placeholder="0.00"
                               min="0"
                               step="0.01"
+                              style={{
+                                backgroundColor: '#1f2937',
+                                borderColor: '#374151',
+                                color: '#f1f5f9'
+                              }}
                             />
                             {formErrors.price && (
-                              <p className="text-red-500 text-sm flex items-center gap-1 mt-1 justify-center">
+                              <p className="text-sm flex items-center gap-1 mt-1 justify-center" style={{ color: '#ef4444' }}>
                                 <AlertCircle className="h-3 w-3" />
                                 {formErrors.price}
                               </p>
@@ -715,16 +1620,24 @@ const UploadJudgmentForm = ({
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="currency" className="text-gray-700 font-medium">
+                            <Label htmlFor="currency" className="font-medium" style={{ color: '#cbd5e1' }}>
                               Currency
                             </Label>
                             <Select value={formData.currency} onValueChange={(v) => handleInputChange('currency', v)}>
-                              <SelectTrigger className="border-gray-300 focus:border-red-400 focus:ring-red-200 h-11 rounded-lg transition-colors">
+                              <SelectTrigger className="h-11 rounded-lg transition-colors" style={{
+                                backgroundColor: '#1f2937',
+                                borderColor: '#374151',
+                                color: '#f1f5f9'
+                              }}>
                                 <SelectValue placeholder="Select currency" />
                               </SelectTrigger>
-                              <SelectContent>
+                              <SelectContent style={{
+                                backgroundColor: '#1f2937',
+                                borderColor: '#374151',
+                                color: '#f1f5f9'
+                              }}>
                                 {CURRENCIES.map(currency => (
-                                  <SelectItem key={currency} value={currency}>
+                                  <SelectItem key={`currency-${currency}`} value={currency}>
                                     {currency}
                                   </SelectItem>
                                 ))}
@@ -736,20 +1649,20 @@ const UploadJudgmentForm = ({
                     </div>
                   )}
 
-                  {/* Step 4: Documents with Enhanced File Upload */}
+                  {/* Step 4: Documents */}
                   {currentStep === 3 && (
                     <div className="space-y-6">
                       {/* Cover Images Section */}
                       <div className="space-y-4">
-                        <Label className="text-gray-700 font-medium flex items-center gap-2">
-                          <div className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></div>
+                        <Label className="font-medium flex items-center gap-2" style={{ color: '#cbd5e1' }}>
+                          <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#94a3b8' }}></div>
                           Cover Images (Optional)
-                          <span className="text-sm font-normal text-gray-500">
+                          <span className="text-sm font-normal" style={{ color: '#94a3b8' }}>
                             (Up to 5 images)
                           </span>
                         </Label>
                         
-                        <p className="text-gray-600 text-sm">
+                        <p className="text-sm" style={{ color: '#94a3b8' }}>
                           Upload up to 5 cover images for the judgment. These will be displayed in the judgment gallery.
                         </p>
                         
@@ -766,15 +1679,25 @@ const UploadJudgmentForm = ({
                         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                           {/* Cover Image Upload Box */}
                           {coverImages.length < 5 && (
-                            <div className="border-2 border-dashed border-red-300 rounded-xl p-4 hover:border-red-400 transition-all duration-300 bg-red-50 cursor-pointer group">
+                            <div className="rounded-xl p-4 cursor-pointer group transition-all duration-300" style={{ 
+                              border: '2px dashed #4b5563',
+                              backgroundColor: '#1f2937',
+                              borderColor: '#4b5563'
+                            }}>
                               <label htmlFor="cover-images" className="cursor-pointer block h-full">
                                 <div className="flex flex-col items-center justify-center h-32 text-center space-y-2">
-                                  <div className="p-2 bg-red-100 rounded-lg">
-                                    <Upload className="h-6 w-6 text-red-600" />
+                                  <div 
+                                    className="p-2 rounded-lg"
+                                    style={{ 
+                                      backgroundColor: '#2d3748',
+                                      border: '1px solid rgba(100, 116, 139, 0.2)'
+                                    }}
+                                  >
+                                    <Upload className="h-6 w-6" style={{ color: '#94a3b8' }} />
                                   </div>
                                   <div>
-                                    <p className="font-medium text-sm">Add Cover</p>
-                                    <p className="text-xs text-gray-500">
+                                    <p className="font-medium text-sm" style={{ color: '#cbd5e1' }}>Add Cover</p>
+                                    <p className="text-xs" style={{ color: '#94a3b8' }}>
                                       {coverImages.length}/5
                                     </p>
                                   </div>
@@ -787,8 +1710,12 @@ const UploadJudgmentForm = ({
                           {coverImages.map((image) => (
                             <div key={image.id} className="relative group">
                               <div 
-                                className="aspect-square rounded-lg overflow-hidden border-2 border-green-500/30 bg-green-50/50 cursor-pointer"
+                                className="aspect-square rounded-lg overflow-hidden cursor-pointer"
                                 onClick={() => previewFile('image', image.previewUrl, image.file.name)}
+                                style={{
+                                  border: '2px solid rgba(34, 197, 94, 0.3)',
+                                  backgroundColor: 'rgba(34, 197, 94, 0.05)'
+                                }}
                               >
                                 <img 
                                   src={image.previewUrl} 
@@ -799,7 +1726,11 @@ const UploadJudgmentForm = ({
                               <button
                                 type="button"
                                 onClick={() => removeCoverImage(image.id)}
-                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                className="absolute -top-2 -right-2 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                style={{ 
+                                  backgroundColor: '#ef4444',
+                                  color: '#ffffff'
+                                }}
                               >
                                 <X className="h-3 w-3" />
                               </button>
@@ -808,53 +1739,320 @@ const UploadJudgmentForm = ({
                         </div>
                         
                         {formErrors.coverImages && (
-                          <p className="text-red-500 text-sm flex items-center gap-1">
+                          <p className="text-sm flex items-center gap-1" style={{ color: '#ef4444' }}>
                             <AlertCircle className="h-3 w-3" />
                             {formErrors.coverImages}
                           </p>
                         )}
                       </div>
 
-                      {/* PDF and Text Files */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <FileUploadSection
-                          title="PDF File *"
-                          description="PDF file up to 50MB"
-                          accept=".pdf"
-                          file={pdfFile}
-                          onFileChange={handlePdfFileChange}
-                          onRemove={() => handlePdfFileChange(null)}
-                          onPreview={(url, name) => previewFile('pdf', url, name)}
-                          fileRef={pdfFileRef}
-                          error={formErrors.pdfFile}
-                          fileType="pdfFile"
-                        />
-                        
-                        <FileUploadSection
-                          title="Text File *"
-                          description="TXT file up to 10MB"
-                          accept=".txt"
-                          file={textFile}
-                          onFileChange={handleTextFileChange}
-                          onRemove={() => handleTextFileChange(null)}
-                          onPreview={(url, name) => previewFile('text', url, name)}
-                          fileRef={textFileRef}
-                          error={formErrors.textFile}
-                          fileType="textFile"
-                        />
+                      {/* PDF File Upload */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-base font-semibold flex items-center gap-2" style={{ color: '#cbd5e1' }}>
+                            <FileText className="h-4 w-4" style={{ color: '#94a3b8' }} />
+                            PDF File *
+                            <span className="text-sm font-normal" style={{ color: '#94a3b8' }}>
+                              (PDF file up to 50MB)
+                            </span>
+                          </Label>
+                          {formErrors.pdfFile && (
+                            <span className="text-sm" style={{ color: '#ef4444' }}>
+                              {formErrors.pdfFile}
+                            </span>
+                          )}
+                        </div>
+
+                        {!pdfFile ? (
+                          <div
+                            className="border-2 border-dashed rounded-xl p-6 transition-all duration-300 bg-[#1f2937] cursor-pointer hover:border-blue-500/50 border-[#374151]"
+                          >
+                            <Input
+                              ref={pdfFileRef}
+                              type="file"
+                              accept=".pdf"
+                              onChange={(e) => handlePdfFileChange(e.target.files?.[0] || null)}
+                              className="hidden"
+                              id="pdf-file"
+                            />
+                            <label htmlFor="pdf-file" className="cursor-pointer block">
+                              <div className="text-center space-y-3">
+                                <div
+                                  className="p-3 rounded-lg w-12 h-12 mx-auto flex items-center justify-center transition-transform hover:scale-110"
+                                  style={{ backgroundColor: 'rgba(100, 116, 139, 0.2)' }}
+                                >
+                                  <FileText className="h-6 w-6" style={{ color: '#94a3b8' }} />
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-white">Upload PDF File</p>
+                                  <p className="mt-1 text-sm" style={{ color: '#94a3b8' }}>
+                                    Click to upload PDF version of the judgment
+                                  </p>
+                                </div>
+                              </div>
+                            </label>
+                          </div>
+                        ) : (
+                          <div
+                            className="border-2 rounded-xl p-4 transition-all duration-300"
+                            style={{
+                              borderColor: 'rgba(34, 197, 94, 0.3)',
+                              backgroundColor: 'rgba(34, 197, 94, 0.05)'
+                            }}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <div
+                                  className="p-2 rounded-lg"
+                                  style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)' }}
+                                >
+                                  <CheckCircle className="h-5 w-5" style={{ color: '#10b981' }} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <FileText className="h-5 w-5 text-white" />
+                                    <p className="font-semibold text-white truncate">
+                                      {pdfFile.file.name}
+                                    </p>
+                                  </div>
+                                  <p className="text-sm" style={{ color: '#94a3b8' }}>
+                                    {formatFileSize(pdfFile.file.size)}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex gap-2 ml-2">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => previewFile('pdf', pdfFile.previewUrl, pdfFile.file.name)}
+                                  className="flex items-center gap-1"
+                                  style={{ 
+                                    color: '#cbd5e1',
+                                    borderColor: '#374151',
+                                    backgroundColor: '#1f2937'
+                                  }}
+                                >
+                                  <Eye className="h-3 w-3" />
+                                  Preview
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handlePdfFileChange(null)}
+                                  style={{ color: '#ef4444' }}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 5: Judgment Content (Rich Text Editor) */}
+                  {currentStep === 4 && (
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-3 pb-4 border-b" style={{ borderColor: 'rgba(100, 116, 139, 0.15)' }}>
+                        <div
+                          className="p-2 rounded-lg"
+                          style={{ backgroundColor: 'rgba(100, 116, 139, 0.2)' }}
+                        >
+                          <FileEdit className="h-5 w-5" style={{ color: '#94a3b8' }} />
+                        </div>
+                        <h3 className="text-xl font-semibold text-white">Judgment Content</h3>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <Label className="text-base font-semibold flex items-center gap-2" style={{ color: '#cbd5e1' }}>
+                            <FileEdit className="h-4 w-4" style={{ color: '#94a3b8' }} />
+                            Judgment Text Content *
+                          </Label>
+
+                          <Select 
+                            value={formData.contentFormat} 
+                            onValueChange={(v: "plain" | "html" | "markdown") => handleInputChange('contentFormat', v)}
+                          >
+                            <SelectTrigger className="w-32 h-9" style={{
+                              backgroundColor: '#1f2937',
+                              borderColor: '#374151',
+                              color: '#f1f5f9'
+                            }}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent style={{
+                              backgroundColor: '#1f2937',
+                              borderColor: '#374151',
+                              color: '#f1f5f9'
+                            }}>
+                              {TEXT_FORMATS.map(format => (
+                                <SelectItem
+                                  key={format}
+                                  value={format}
+                                  className="hover:bg-[#2d3748]"
+                                >
+                                  {format.toUpperCase()}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="border-2 rounded-xl" style={{
+                          backgroundColor: '#1f2937',
+                          borderColor: '#374151'
+                        }}>
+                          {/* Toolbar */}
+                          <div className="flex flex-wrap items-center gap-1 p-3 border-b" style={{
+                            borderColor: '#374151',
+                            backgroundColor: '#2d3748'
+                          }}>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => executeCommand('undo')} 
+                              className="h-8 w-8 p-0 text-white hover:bg-[#374151]"
+                            >
+                              <Undo className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => executeCommand('redo')} 
+                              className="h-8 w-8 p-0 text-white hover:bg-[#374151]"
+                            >
+                              <Redo className="h-4 w-4" />
+                            </Button>
+
+                            <div className="w-px h-6" style={{ backgroundColor: 'rgba(100, 116, 139, 0.3)' }}></div>
+
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => executeCommand('bold')} 
+                              className="h-8 w-8 p-0 text-white hover:bg-[#374151]"
+                            >
+                              <Bold className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => executeCommand('italic')} 
+                              className="h-8 w-8 p-0 text-white hover:bg-[#374151]"
+                            >
+                              <Italic className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => executeCommand('underline')} 
+                              className="h-8 w-8 p-0 text-white hover:bg-[#374151]"
+                            >
+                              <Underline className="h-4 w-4" />
+                            </Button>
+
+                            <div className="w-px h-6" style={{ backgroundColor: 'rgba(100, 116, 139, 0.3)' }}></div>
+
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => executeCommand('justifyLeft')} 
+                              className="h-8 w-8 p-0 text-white hover:bg-[#374151]"
+                            >
+                              <AlignLeft className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => executeCommand('justifyCenter')} 
+                              className="h-8 w-8 p-0 text-white hover:bg-[#374151]"
+                            >
+                              <AlignCenter className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => executeCommand('justifyRight')} 
+                              className="h-8 w-8 p-0 text-white hover:bg-[#374151]"
+                            >
+                              <AlignRight className="h-4 w-4" />
+                            </Button>
+
+                            <div className="w-px h-6" style={{ backgroundColor: 'rgba(100, 116, 139, 0.3)' }}></div>
+
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => executeCommand('insertUnorderedList')} 
+                              className="h-8 w-8 p-0 text-white hover:bg-[#374151]"
+                            >
+                              <List className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => executeCommand('insertOrderedList')} 
+                              className="h-8 w-8 p-0 text-white hover:bg-[#374151]"
+                            >
+                              <ListOrdered className="h-4 w-4" />
+                            </Button>
+                          </div>
+
+                          <div
+                            ref={textEditorRef}
+                            contentEditable
+                            onInput={handleEditorChange}
+                            className="h-96 w-full overflow-auto p-6 focus:outline-none"
+                            style={{
+                              fontFamily: 'system-ui, -apple-system, sans-serif',
+                              fontSize: '15px',
+                              lineHeight: '1.6',
+                              color: '#f1f5f9'
+                            }}
+                            placeholder="Start typing the judgment content here..."
+                          />
+                        </div>
+                        {formErrors.content && (
+                          <p className="text-sm flex items-center gap-1" style={{ color: '#ef4444' }}>
+                            <AlertCircle className="h-3 w-3" />
+                            {formErrors.content}
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}
 
                   {/* Navigation Buttons */}
-                  <div className="flex flex-col sm:flex-row justify-between pt-6 border-t border-gray-200 mt-auto gap-4">
+                  <div className="flex flex-col sm:flex-row justify-between pt-6 gap-4" style={{ 
+                    borderTop: '1px solid rgba(100, 116, 139, 0.15)',
+                    marginTop: 'auto'
+                  }}>
                     <div>
                       {currentStep > 0 && (
                         <Button
                           type="button"
                           onClick={prevStep}
                           variant="outline"
-                          className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 px-6 rounded-lg transition-colors w-full sm:w-auto"
+                          className="h-11 px-6 rounded-lg transition-colors w-full sm:w-auto"
+                          style={{ 
+                            color: '#cbd5e1',
+                            borderColor: '#374151',
+                            backgroundColor: '#1f2937'
+                          }}
                         >
                           <ChevronLeft className="h-4 w-4 mr-2" />
                           Previous
@@ -865,9 +2063,14 @@ const UploadJudgmentForm = ({
                     <div className="flex flex-col sm:flex-row gap-3">
                       <Button
                         type="button"
-                        onClick={onCancel}
+                        onClick={handleCancel}
                         variant="outline"
-                        className="border-gray-300 text-gray-700 hover:bg-gray-50 h-11 px-6 rounded-lg transition-colors w-full sm:w-auto"
+                        className="h-11 px-6 rounded-lg transition-colors w-full sm:w-auto"
+                        style={{ 
+                          color: '#cbd5e1',
+                          borderColor: '#374151',
+                          backgroundColor: '#1f2937'
+                        }}
                       >
                         Cancel
                       </Button>
@@ -876,7 +2079,12 @@ const UploadJudgmentForm = ({
                         <Button
                           type="button"
                           onClick={nextStep}
-                          className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white h-11 px-8 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 w-full sm:w-auto"
+                          className="h-11 px-8 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 w-full sm:w-auto"
+                          style={{
+                            backgroundColor: '#2d3748',
+                            color: '#f1f5f9',
+                            border: '1px solid rgba(100, 116, 139, 0.3)'
+                          }}
                         >
                           Next Step
                           <ChevronRight className="h-4 w-4 ml-2" />
@@ -884,12 +2092,17 @@ const UploadJudgmentForm = ({
                       ) : (
                         <Button
                           type="submit"
-                          disabled={isLoading || !pdfFile || !textFile}
-                          className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white h-11 px-8 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                          disabled={isLoading || !pdfFile}
+                          className="h-11 px-8 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{
+                            backgroundColor: '#2d3748',
+                            color: '#f1f5f9',
+                            border: '1px solid rgba(100, 116, 139, 0.3)'
+                          }}
                         >
                           {isLoading ? (
                             <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 mr-2" style={{ borderColor: '#f1f5f9' }}></div>
                               Uploading...
                             </>
                           ) : (
@@ -911,10 +2124,14 @@ const UploadJudgmentForm = ({
 
       {/* File Preview Dialog */}
       <Dialog open={previewDialog.open} onOpenChange={(open) => setPreviewDialog(prev => ({ ...prev, open }))}>
-        <DialogContent className="max-w-4xl max-h-[80vh]">
+        <DialogContent className="max-w-4xl max-h-[80vh]" style={{
+          backgroundColor: '#1a2234',
+          border: '1px solid rgba(100, 116, 139, 0.15)',
+          color: '#f1f5f9'
+        }}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5" />
+              <Eye className="h-5 w-5" style={{ color: '#94a3b8' }} />
               Preview: {previewDialog.name}
             </DialogTitle>
           </DialogHeader>
@@ -926,17 +2143,9 @@ const UploadJudgmentForm = ({
               <div className="w-full h-[60vh]">
                 <iframe 
                   src={previewDialog.url} 
-                  className="w-full h-full rounded-lg border"
+                  className="w-full h-full rounded-lg"
                   title="PDF Preview"
-                />
-              </div>
-            )}
-            {previewDialog.type === 'text' && (
-              <div className="w-full h-[60vh]">
-                <iframe 
-                  src={previewDialog.url} 
-                  className="w-full h-full rounded-lg border"
-                  title="Text Preview"
+                  style={{ border: '1px solid #374151' }}
                 />
               </div>
             )}
@@ -946,148 +2155,28 @@ const UploadJudgmentForm = ({
               variant="outline"
               onClick={() => window.open(previewDialog.url, '_blank')}
               className="flex items-center gap-2"
+              style={{ 
+                color: '#cbd5e1',
+                borderColor: '#374151',
+                backgroundColor: '#1f2937'
+              }}
             >
               <Download className="h-4 w-4" />
               Open in New Tab
             </Button>
-            <Button onClick={() => setPreviewDialog(prev => ({ ...prev, open: false }))}>
+            <Button 
+              onClick={() => setPreviewDialog(prev => ({ ...prev, open: false }))}
+              style={{
+                backgroundColor: '#2d3748',
+                color: '#f1f5f9',
+                border: '1px solid rgba(100, 116, 139, 0.3)'
+              }}
+            >
               Close
             </Button>
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-};
-
-// Enhanced File Upload Sub-component with Preview
-interface FileUploadSectionProps {
-  title: string;
-  description: string;
-  accept: string;
-  file: FilePreview | null;
-  onFileChange: (file: File | null) => void;
-  onRemove: () => void;
-  onPreview: (url: string, name: string) => void;
-  fileRef: React.RefObject<HTMLInputElement>;
-  error?: string;
-  fileType: 'pdfFile' | 'textFile';
-}
-
-const FileUploadSection = ({ 
-  title, 
-  description, 
-  accept, 
-  file,
-  onFileChange,
-  onRemove,
-  onPreview,
-  fileRef,
-  error,
-  fileType
-}: FileUploadSectionProps) => {
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0] || null;
-    onFileChange(selectedFile);
-  };
-
-  const getFileIcon = () => {
-    switch (fileType) {
-      case 'pdfFile': return <FileText className="h-5 w-5" />;
-      case 'textFile': return <File className="h-5 w-5" />;
-      default: return <File className="h-5 w-5" />;
-    }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  return (
-    <div className="space-y-3 w-full">
-      <Label className="text-gray-700 font-medium flex items-center gap-2">
-        <div className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></div>
-        {title}
-      </Label>
-      
-      {!file ? (
-        <div className="border-2 border-dashed border-red-300 rounded-xl p-6 hover:border-red-400 transition-all duration-300 bg-red-50 cursor-pointer">
-          <Input 
-            ref={fileRef}
-            type="file" 
-            accept={accept}
-            onChange={handleFileSelect}
-            className="hidden"
-            id={`file-${fileType}`}
-          />
-          <label htmlFor={`file-${fileType}`} className="cursor-pointer block">
-            <div className="text-center space-y-3">
-              <div className="p-3 bg-red-100 rounded-lg w-12 h-12 mx-auto flex items-center justify-center">
-                <Upload className="h-6 w-6 text-red-600" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-700">Click to upload</p>
-                <p className="text-gray-500 mt-1 text-sm">
-                  {description}
-                </p>
-              </div>
-            </div>
-          </label>
-        </div>
-      ) : (
-        <div className="border-2 border-green-500/30 rounded-xl p-4 bg-green-50/50 transition-all duration-300">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Check className="h-5 w-5 text-green-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  {getFileIcon()}
-                  <p className="font-semibold text-gray-700 truncate">
-                    {file.file.name}
-                  </p>
-                </div>
-                <p className="text-gray-500 text-sm">
-                  {formatFileSize(file.file.size)}
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2 ml-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => onPreview(file.previewUrl, file.file.name)}
-                className="flex items-center gap-1"
-              >
-                <Eye className="h-3 w-3" />
-                Preview
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={onRemove}
-                className="text-red-500 hover:text-red-700 hover:bg-red-50"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {error && (
-        <p className="text-red-500 text-sm flex items-center gap-1">
-          <AlertCircle className="h-3 w-3" />
-          {error}
-        </p>
-      )}
     </div>
   );
 };

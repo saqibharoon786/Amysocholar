@@ -1,6 +1,17 @@
 # Production Deployment Checklist
 
-Use this when deploying to your **production domain** (e.g. `https://yourdomain.com`).
+Use this when deploying to your **production domain** (e.g. `https://yourdomain.com`) and connecting the **SafePay production (live) account**.
+
+---
+
+## Going live: what to change (summary)
+
+| Where | What to change |
+|-------|----------------|
+| **Backend `.env`** | `NODE_ENV=production`, `FRONTEND_URL`/`BASE_URL` = your domain (https), production `MONGO`, strong `JWT_SECRET`/`SESSION_SECRET`, **SafePay production keys** and `SAFEPAY_ENVIRONMENT=production`, `SAFEPAY_SUCCESS_URL`/`SAFEPAY_WEBHOOK_URL` on your backend domain. |
+| **SafePay Dashboard** | Use **Live Dashboard** (not Test). Copy production **Public** and **Secret** keys; set **Webhook URL**; ensure success/cancel URLs match backend and frontend. |
+| **Frontend build** | Build with `VITE_API_URL=https://api.yourdomain.com/api` (or your real API URL). Deploy the `dist/` folder to your domain. |
+| **Hosting** | Serve frontend and backend over **HTTPS**. Backend CORS allows only `FRONTEND_URL`. |
 
 ---
 
@@ -32,6 +43,8 @@ Set these on your **production server** (e.g. in `.env` or your host’s env var
 | `SAFEPAY_CANCEL_URL` | *(optional)* | Cancel URL is **FRONTEND_URL + /catalog** by default. Set only to override. |
 | `SAFEPAY_WEBHOOK_URL` | `https://api.yourdomain.com/api/payments/safepay/webhook` | Backend URL SafePay can call (must be public HTTPS) |
 
+**SafePay production keys:** Get them from the **Live Dashboard** at https://getsafepay.com/dashboard → **Developers → API** (use the production/live keys, not the test/sandbox keys). Do not use sandbox keys when `SAFEPAY_ENVIRONMENT=production`.
+
 ### Backend public URL (for redirects / callbacks)
 
 | Variable | Example | Notes |
@@ -44,6 +57,28 @@ Set these on your **production server** (e.g. in `.env` or your host’s env var
 - `SUPERADMIN_EMAIL`, `SUPERADMIN_PASSWORD`, etc. – only if you run superadmin init in production
 - `SMTP_*`, `EMAIL_FROM` – for emails
 - `SUPERADMIN_COMMISSION_PERCENTAGE`, `MINIMUM_PAYOUT_AMOUNT`
+
+### Example backend production `.env` (replace placeholders)
+
+```env
+NODE_ENV=production
+PORT=3000
+MONGO=mongodb+srv://user:pass@cluster.mongodb.net/yourdb
+FRONTEND_URL=https://yourdomain.com
+BASE_URL=https://api.yourdomain.com
+SESSION_SECRET=your-long-random-session-secret-32-chars-min
+JWT_SECRET=your-long-random-jwt-secret-32-chars-min
+JWT_EXPIRES_IN=7d
+
+# SafePay LIVE (from Live Dashboard only)
+SAFEPAY_ENVIRONMENT=production
+SAFEPAY_PUBLIC_KEY=<from Live Dashboard – Developers → API>
+SAFEPAY_SECRET_KEY=<from Live Dashboard – Developers → API>
+SAFEPAY_WEBHOOK_SECRET=<from Live Dashboard – Webhooks>
+SAFEPAY_SUCCESS_URL=https://api.yourdomain.com/api/payments/safepay/return
+SAFEPAY_WEBHOOK_URL=https://api.yourdomain.com/api/payments/safepay/webhook
+# Cancel URL defaults to FRONTEND_URL/catalog; set SAFEPAY_CANCEL_URL only to override
+```
 
 ---
 
@@ -87,12 +122,12 @@ Backend allows only `FRONTEND_URL` in production. So:
 
 ---
 
-## 4. SafePay Live Dashboard
+## 4. SafePay Live Dashboard (production account)
 
-1. Log in: https://getsafepay.com/dashboard  
-2. **Developers → API**: copy **production** Public key and Secret key into backend `.env`.  
-3. **Webhooks**: add your production webhook URL (e.g. `https://api.yourdomain.com/api/payments/safepay/webhook`), copy the webhook secret into `SAFEPAY_WEBHOOK_SECRET`.  
-4. Success/cancel URLs in dashboard must match your backend/frontend: success = `SAFEPAY_SUCCESS_URL`, cancel = `FRONTEND_URL/catalog` (or `SAFEPAY_CANCEL_URL` if set).
+1. Log in at **https://getsafepay.com/dashboard** (use your **live/production** account, not sandbox).
+2. **Developers → API**: copy the **production** (live) **Public key** and **Secret key** into your backend `.env` as `SAFEPAY_PUBLIC_KEY` and `SAFEPAY_SECRET_KEY`. Do not use test/sandbox keys when going live.
+3. **Webhooks**: add a webhook with URL `https://api.yourdomain.com/api/payments/safepay/webhook` (your real backend URL). Copy the **Webhook secret** into `SAFEPAY_WEBHOOK_SECRET` in `.env`.
+4. Ensure success/cancel behavior: your backend already sends `redirect_url` = `SAFEPAY_SUCCESS_URL` and `cancel_url` = `FRONTEND_URL/catalog` (or `SAFEPAY_CANCEL_URL`). No need to set these in the dashboard if your backend env is correct.
 
 ---
 

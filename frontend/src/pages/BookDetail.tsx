@@ -3,16 +3,15 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookService, Book, BookPreview } from "@/services/bookService";
+import { BookService, Book, BookPreview } from "@/services/BookService";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+import { Loader2, BookOpen, FileText, Eye, Star } from "lucide-react";
 import { toast } from "sonner";
 import { PaymentService } from '@/services/paymentService';
 
 // Import components
 import BookGallery from "@/components/book/BookGallery";
 import BookActions from "@/components/book/BookActions";
-import BookHeader from "@/components/book/BookHeader";
 import BookDetailsTab from "@/components/book/BookDetailsTab";
 import BookDescriptionTab from "@/components/book/BookDescriptionTab";
 import BookPreviewTab from "@/components/book/BookPreviewTab";
@@ -110,16 +109,10 @@ const handlePurchase = async () => {
 
   try {
     setPurchasing(true);
-    const response = await BookService.purchaseBook(book._id, {
-      format: 'pdf',
-      paymentMethod: 'safepay'
-    });
+    const response = await BookService.purchaseBook(book._id);
     if (response.success) {
-      const paymentUrl =
-        (response as any).payment?.paymentUrl ??
-        (response as any).data?.paymentUrl ??
-        (response as any).redirectUrl ??
-        (response as any).paymentUrl;
+      const res = response as { payment?: { paymentUrl: string }; redirectUrl?: string };
+      const paymentUrl = res.payment?.paymentUrl ?? res.redirectUrl;
       if (paymentUrl) {
         window.location.href = paymentUrl;
       } else {
@@ -128,13 +121,10 @@ const handlePurchase = async () => {
     } else {
       toast.error(response.message || 'Failed to purchase book');
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error purchasing book:', error);
-    const msg =
-      error?.response?.data?.message ||
-      error?.message ||
-      'Failed to purchase book';
-    toast.error(msg);
+    const msg = error && typeof error === 'object' && 'response' in error && (error as any).response?.data?.message;
+    toast.error(msg || 'Failed to purchase book');
   } finally {
     setPurchasing(false);
   }
@@ -273,19 +263,15 @@ const handlePurchase = async () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10 py-8">
       <div className="container mx-auto px-4">
-        {/* Header */}
-        <BookHeader
-          title={book.title}
-          author={book.author}
-          viewCount={book.viewCount || 0}
-          averageRating={book.averageRating || 0}
-          reviewCount={book.reviewCount || 0}
-          authorBio={book.authorBio}
-          showRatingModal={showRatingModal}
-          hoverRating={hoverRating}
-          onShowRatingModal={() => setShowRatingModal(true)}
-          onHoverRating={setHoverRating}
-        />
+        {/* Main Book Title and Author */}
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-3">
+            {book.title}
+          </h1>
+          <div className="text-xl text-muted-foreground">
+            by {book.author}
+          </div>
+        </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left Column - Book Cover Gallery and Actions */}
@@ -334,46 +320,66 @@ const handlePurchase = async () => {
           <div className="lg:col-span-2">
             <Card className="border-2 shadow-xl hover:shadow-2xl transition-all duration-300">
               <CardContent>
+                {/* Colorful and Attractive Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-                  <TabsList className="grid w-full grid-cols-4 bg-secondary/20 p-1 rounded-xl">
+                  <TabsList className="grid w-full grid-cols-4 gap-2 p-2 bg-gradient-to-r from-blue-50 via-purple-50 to-indigo-50 rounded-2xl shadow-inner">
                     <TabsTrigger 
                       value="details" 
-                      className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all"
+                      className="relative group data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-md text-blue-700 hover:text-blue-800"
                     >
-                      Details
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4" />
+                        <span className="font-semibold">Details</span>
+                      </div>
+                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 group-data-[state=active]:w-3/4 h-1 bg-blue-300 rounded-full transition-all duration-300"></div>
                     </TabsTrigger>
+                    
                     <TabsTrigger 
                       value="description"
-                      className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all"
+                      className="relative group data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-md text-purple-700 hover:text-purple-800"
                     >
-                      Description
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        <span className="font-semibold">Description</span>
+                      </div>
+                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 group-data-[state=active]:w-3/4 h-1 bg-purple-300 rounded-full transition-all duration-300"></div>
                     </TabsTrigger>
+                    
                     <TabsTrigger 
                       value="preview"
-                      className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all"
+                      className="relative group data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-green-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-md text-green-700 hover:text-green-800"
                     >
-                      Preview
+                      <div className="flex items-center gap-2">
+                        <Eye className="w-4 h-4" />
+                        <span className="font-semibold">Preview</span>
+                      </div>
+                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 group-data-[state=active]:w-3/4 h-1 bg-green-300 rounded-full transition-all duration-300"></div>
                     </TabsTrigger>
+                    
                     <TabsTrigger 
                       value="reviews"
-                      className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-lg transition-all"
+                      className="relative group data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-amber-600 data-[state=active]:text-white data-[state=active]:shadow-lg rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-md text-amber-700 hover:text-amber-800"
                     >
-                      Reviews
+                      <div className="flex items-center gap-2">
+                        <Star className="w-4 h-4" />
+                        <span className="font-semibold">Reviews</span>
+                      </div>
+                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 group-data-[state=active]:w-3/4 h-1 bg-amber-300 rounded-full transition-all duration-300"></div>
                     </TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="details">
+                  <TabsContent value="details" className="animate-fadeIn">
                     <BookDetailsTab book={book} />
                   </TabsContent>
 
-                  <TabsContent value="description">
+                  <TabsContent value="description" className="animate-fadeIn">
                     <BookDescriptionTab 
                       description={book.description}
                       authorBio={book.authorBio}
                     />
                   </TabsContent>
 
-                  <TabsContent value="preview">
+                  <TabsContent value="preview" className="animate-fadeIn">
                     <BookPreviewTab
                       book={book}
                       bookPreview={bookPreview}
@@ -385,7 +391,7 @@ const handlePurchase = async () => {
                     />
                   </TabsContent>
 
-                  <TabsContent value="reviews">
+                  <TabsContent value="reviews" className="animate-fadeIn">
                     <BookReviewsTab
                       averageRating={book.averageRating || 0}
                       reviewCount={book.reviewCount || 0}
@@ -433,6 +439,23 @@ const handlePurchase = async () => {
         onSubmit={handleRatingSubmit}
         isSubmitting={submittingRating}
       />
+
+      {/* Animation styles */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 };

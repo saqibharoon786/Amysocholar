@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Eye, CheckCircle, XCircle, Filter, Search, Star, Download, User, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { BookService, Book } from "@/services/bookService";
+import { BookService, Book } from "@/services/BookService";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Dialog,
@@ -71,7 +71,7 @@ const BookShop = () => {
   const fetchBooks = async () => {
     try {
       setLoading(true);
-      
+
       if (activeTab === "pending") {
         if (showMyBooksOnly && user) {
           // Use my books with pending status
@@ -90,8 +90,8 @@ const BookShop = () => {
         if (showMyBooksOnly && user) {
           // Use my books with status filter
           const response = await BookService.getMyBooks(
-            statusFilter === "all" ? undefined : statusFilter, 
-            1, 
+            statusFilter === "all" ? undefined : statusFilter,
+            1,
             50
           );
           if (response.success && response.data) {
@@ -99,11 +99,11 @@ const BookShop = () => {
           }
         } else {
           // Use the correct all books API with status filter
-          const response = await BookService.getMyBooks({ 
+          const response = await BookService.getMyBooks({
             status: statusFilter === "all" ? undefined : statusFilter,
-            limit: 50 
+            limit: 50
           });
-          
+
           if (response.success && response.data) {
             setBooks(response.data.books || []);
           }
@@ -123,7 +123,7 @@ const BookShop = () => {
 
   // Filter books based on search
   const getFilteredBooks = () => {
-    return books.filter(book => 
+    return books.filter(book =>
       book.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       book.author?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       book.category?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -131,7 +131,7 @@ const BookShop = () => {
   };
 
   const getFilteredPendingBooks = () => {
-    return pendingBooks.filter(book => 
+    return pendingBooks.filter(book =>
       book.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       book.author?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       book.category?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -192,14 +192,14 @@ const BookShop = () => {
   const handleApprove = async (book: Book) => {
     try {
       const response = await BookService.approveBook(book._id);
-      
+
       if (response.success) {
         toast({
           title: "Book Approved",
           description: `"${book.title}" has been approved and published`,
           variant: "default",
         });
-        
+
         // Remove from pending list and add to approved list
         setPendingBooks(prev => prev.filter(b => b._id !== book._id));
         if (response.data?.book) {
@@ -225,14 +225,14 @@ const BookShop = () => {
 
     try {
       const response = await BookService.rejectBook(selectedBook._id, rejectionReason);
-      
+
       if (response.success) {
         toast({
           title: "Book Rejected",
           description: `"${selectedBook.title}" has been rejected`,
           variant: "default",
         });
-        
+
         // Remove from pending list
         setPendingBooks(prev => prev.filter(book => book._id !== selectedBook._id));
         setRejectDialogOpen(false);
@@ -254,14 +254,14 @@ const BookShop = () => {
     try {
       // Use the correct delete route for my books
       const response = await BookService.deleteBook(selectedBook._id);
-      
+
       if (response.success) {
         toast({
           title: "Book Deleted",
           description: `"${selectedBook.title}" has been deleted successfully`,
           variant: "default",
         });
-        
+
         // Remove book from local state
         if (activeTab === "pending") {
           setPendingBooks(prev => prev.filter(book => book._id !== selectedBook._id));
@@ -312,29 +312,29 @@ const BookShop = () => {
 
       // Use the correct update route for my books
       const response = await BookService.updateBook(selectedBook._id, updateData);
-      
+
       if (response.success && response.data?.book) {
         toast({
           title: "Book Updated",
           description: `"${selectedBook.title}" has been updated successfully`,
           variant: "default",
         });
-        
+
         // Update book in local state
         if (activeTab === "pending") {
-          setPendingBooks(prev => prev.map(book => 
-            book._id === selectedBook._id 
+          setPendingBooks(prev => prev.map(book =>
+            book._id === selectedBook._id
               ? { ...book, ...response.data!.book }
               : book
           ));
         } else {
-          setBooks(prev => prev.map(book => 
-            book._id === selectedBook._id 
+          setBooks(prev => prev.map(book =>
+            book._id === selectedBook._id
               ? { ...book, ...response.data!.book }
               : book
           ));
         }
-        
+
         setEditDialogOpen(false);
         setSelectedBook(null);
       }
@@ -371,7 +371,7 @@ const BookShop = () => {
       approved: { variant: "default" as const, label: "Published", className: "bg-green-100 text-green-800 hover:bg-green-100" },
       rejected: { variant: "destructive" as const, label: "Rejected", className: "bg-red-100 text-red-800 hover:bg-red-100" }
     };
-    
+
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
     return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
   };
@@ -400,7 +400,7 @@ const BookShop = () => {
   const formatPrice = (book: Book) => {
     const price = book.discountedPrice || book.price;
     const currency = book.currency || "USD";
-    
+
     if (book.discountPercentage && book.discountPercentage > 0) {
       return (
         <div className="flex items-center gap-2">
@@ -416,7 +416,7 @@ const BookShop = () => {
         </div>
       );
     }
-    
+
     return (
       <span className="text-lg font-bold text-gray-900">
         {currency} {price}
@@ -469,13 +469,13 @@ const BookShop = () => {
       {/* Tabs for different views */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 lg:w-[400px] bg-muted/50 p-1">
-          <TabsTrigger 
-            value="all" 
+          <TabsTrigger
+            value="all"
             className="data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
           >
             All Books ({showMyBooksOnly ? filteredBooks.length : books.length})
           </TabsTrigger>
-          <TabsTrigger 
+          <TabsTrigger
             value="pending"
             className="data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
           >
@@ -498,7 +498,7 @@ const BookShop = () => {
             <>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredBooks.map((book) => (
-                  <BookCard 
+                  <BookCard
                     key={book._id}
                     book={book}
                     getMyBook={getMyBook(book)}
@@ -519,7 +519,7 @@ const BookShop = () => {
               </div>
 
               {filteredBooks.length === 0 && (
-                <EmptyState 
+                <EmptyState
                   showMyBooksOnly={showMyBooksOnly}
                   onClearFilters={() => {
                     setSearchTerm("");
@@ -542,7 +542,7 @@ const BookShop = () => {
             <>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {filteredPendingBooks.map((book) => (
-                  <PendingBookCard 
+                  <PendingBookCard
                     key={book._id}
                     book={book}
                     getMyBook={getMyBook(book)}
@@ -613,27 +613,26 @@ const BookShop = () => {
 };
 
 // Component for Book Card
-const BookCard = ({ 
-  book, 
-  getMyBook, 
-  onEdit, 
-  onDelete, 
-  onPreview, 
-  getStatusBadge, 
-  getMyBookBadge, 
-  getFeaturedBadge, 
-  getBestsellerBadge, 
-  getNewReleaseBadge, 
-  formatPrice, 
-  getCurrentImage, 
-  getImageAlt, 
-  handleImageError 
+const BookCard = ({
+  book,
+  getMyBook,
+  onEdit,
+  onDelete,
+  onPreview,
+  getStatusBadge,
+  getMyBookBadge,
+  getFeaturedBadge,
+  getBestsellerBadge,
+  getNewReleaseBadge,
+  formatPrice,
+  getCurrentImage,
+  getImageAlt,
+  handleImageError
 }: any) => (
-  <Card className={`group relative overflow-hidden border-2 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ${
-    getMyBook 
-      ? 'border-blue-300 hover:border-blue-400 bg-blue-50/30' 
-      : 'border-gray-200 hover:border-purple-300'
-  }`}>
+  <Card className={`group relative overflow-hidden border-2 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ${getMyBook
+    ? 'border-blue-300 hover:border-blue-400 bg-blue-50/30'
+    : 'border-gray-200 hover:border-purple-300'
+    }`}>
     {/* Badge Container */}
     <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
       <div className="flex flex-col gap-1">
@@ -657,23 +656,21 @@ const BookCard = ({
           crossOrigin="anonymous"
           loading="lazy"
         />
-        <div className={`absolute inset-0 transition-colors duration-300 ${
-          getMyBook 
-            ? 'bg-blue-500/0 group-hover:bg-blue-500/10' 
-            : 'bg-black/0 group-hover:bg-black/10'
-        }`} />
+        <div className={`absolute inset-0 transition-colors duration-300 ${getMyBook
+          ? 'bg-blue-500/0 group-hover:bg-blue-500/10'
+          : 'bg-black/0 group-hover:bg-black/10'
+          }`} />
       </div>
     </CardHeader>
-    
+
     <CardContent className="p-4 space-y-3">
-      <CardTitle className={`text-lg leading-tight line-clamp-2 transition-colors ${
-        getMyBook 
-          ? 'group-hover:text-blue-600' 
-          : 'group-hover:text-purple-600'
-      }`}>
+      <CardTitle className={`text-lg leading-tight line-clamp-2 transition-colors ${getMyBook
+        ? 'group-hover:text-blue-600'
+        : 'group-hover:text-purple-600'
+        }`}>
         {book.title}
       </CardTitle>
-      
+
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <User className="h-3 w-3" />
         <span className="line-clamp-1">{book.author}</span>
@@ -712,35 +709,33 @@ const BookCard = ({
     </CardContent>
 
     <CardFooter className="p-4 pt-0 flex gap-2">
-      <Button 
-        variant="outline" 
-        size="sm" 
+      <Button
+        variant="outline"
+        size="sm"
         onClick={() => onPreview(book)}
         className="flex-1 hover:bg-blue-50 hover:text-blue-600 transition-colors"
       >
         <Eye className="h-4 w-4" />
       </Button>
-      <Button 
-        variant="outline" 
-        size="sm" 
+      <Button
+        variant="outline"
+        size="sm"
         onClick={() => onEdit(book)}
-        className={`flex-1 transition-colors ${
-          getMyBook
-            ? 'hover:bg-green-50 hover:text-green-600 border-green-200'
-            : 'hover:bg-green-50 hover:text-green-600'
-        }`}
+        className={`flex-1 transition-colors ${getMyBook
+          ? 'hover:bg-green-50 hover:text-green-600 border-green-200'
+          : 'hover:bg-green-50 hover:text-green-600'
+          }`}
       >
         <Edit className="h-4 w-4" />
       </Button>
-      <Button 
-        variant="outline" 
-        size="sm" 
+      <Button
+        variant="outline"
+        size="sm"
         onClick={() => onDelete(book)}
-        className={`flex-1 transition-colors ${
-          getMyBook
-            ? 'hover:bg-red-50 hover:text-red-600 border-red-200'
-            : 'hover:bg-red-50 hover:text-red-600'
-        }`}
+        className={`flex-1 transition-colors ${getMyBook
+          ? 'hover:bg-red-50 hover:text-red-600 border-red-200'
+          : 'hover:bg-red-50 hover:text-red-600'
+          }`}
       >
         <Trash2 className="h-4 w-4" />
       </Button>
@@ -749,23 +744,22 @@ const BookCard = ({
 );
 
 // Component for Pending Book Card
-const PendingBookCard = ({ 
-  book, 
-  getMyBook, 
-  onPreview, 
-  onApprove, 
-  onReject, 
-  getStatusBadge, 
-  getMyBookBadge, 
-  getCurrentImage, 
-  getImageAlt, 
-  handleImageError 
+const PendingBookCard = ({
+  book,
+  getMyBook,
+  onPreview,
+  onApprove,
+  onReject,
+  getStatusBadge,
+  getMyBookBadge,
+  getCurrentImage,
+  getImageAlt,
+  handleImageError
 }: any) => (
-  <Card className={`group relative overflow-hidden border-2 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ${
-    getMyBook
-      ? 'border-blue-300 hover:border-blue-400 bg-blue-50/30'
-      : 'border-yellow-200 hover:border-yellow-300 bg-yellow-50/30'
-  }`}>
+  <Card className={`group relative overflow-hidden border-2 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ${getMyBook
+    ? 'border-blue-300 hover:border-blue-400 bg-blue-50/30'
+    : 'border-yellow-200 hover:border-yellow-300 bg-yellow-50/30'
+    }`}>
     {/* Badge Container */}
     <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
       <div className="flex flex-col gap-1">
@@ -787,23 +781,21 @@ const PendingBookCard = ({
           crossOrigin="anonymous"
           loading="lazy"
         />
-        <div className={`absolute inset-0 transition-colors duration-300 ${
-          getMyBook
-            ? 'bg-blue-500/0 group-hover:bg-blue-500/10'
-            : 'bg-yellow-500/0 group-hover:bg-yellow-500/10'
-        }`} />
+        <div className={`absolute inset-0 transition-colors duration-300 ${getMyBook
+          ? 'bg-blue-500/0 group-hover:bg-blue-500/10'
+          : 'bg-yellow-500/0 group-hover:bg-yellow-500/10'
+          }`} />
       </div>
     </CardHeader>
-    
+
     <CardContent className="p-4 space-y-3">
-      <CardTitle className={`text-lg leading-tight line-clamp-2 transition-colors ${
-        getMyBook
-          ? 'group-hover:text-blue-600'
-          : 'group-hover:text-yellow-600'
-      }`}>
+      <CardTitle className={`text-lg leading-tight line-clamp-2 transition-colors ${getMyBook
+        ? 'group-hover:text-blue-600'
+        : 'group-hover:text-yellow-600'
+        }`}>
         {book.title}
       </CardTitle>
-      
+
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <User className="h-3 w-3" />
         <span className="line-clamp-1">{book.author}</span>
@@ -837,24 +829,24 @@ const PendingBookCard = ({
     </CardContent>
 
     <CardFooter className="p-4 pt-0 flex gap-2">
-      <Button 
-        variant="outline" 
-        size="sm" 
+      <Button
+        variant="outline"
+        size="sm"
         onClick={() => onPreview(book)}
         className="flex-1 hover:bg-blue-50 hover:text-blue-600 transition-colors"
       >
         <Eye className="h-4 w-4" />
       </Button>
-      <Button 
-        size="sm" 
+      <Button
+        size="sm"
         onClick={() => onApprove(book)}
         className="flex-1 bg-green-600 hover:bg-green-700 text-white transition-colors"
       >
         <CheckCircle className="h-4 w-4" />
       </Button>
-      <Button 
-        variant="destructive" 
-        size="sm" 
+      <Button
+        variant="destructive"
+        size="sm"
         onClick={() => onReject(book)}
         className="flex-1"
       >
@@ -882,20 +874,19 @@ const EmptyState = ({ showMyBooksOnly, onClearFilters }: any) => (
 // Pending Empty State Component
 const PendingEmptyState = ({ showMyBooksOnly }: any) => (
   <div className="text-center py-12 space-y-4">
-    <div className={`w-24 h-24 mx-auto rounded-full flex items-center justify-center ${
-      showMyBooksOnly ? 'bg-blue-50' : 'bg-yellow-50'
-    }`}>
+    <div className={`w-24 h-24 mx-auto rounded-full flex items-center justify-center ${showMyBooksOnly ? 'bg-blue-50' : 'bg-yellow-50'
+      }`}>
       <CheckCircle className={`h-8 w-8 ${showMyBooksOnly ? 'text-blue-500' : 'text-yellow-500'}`} />
     </div>
     <p className="text-muted-foreground">
-      {showMyBooksOnly 
-        ? "No pending books found in your collection" 
+      {showMyBooksOnly
+        ? "No pending books found in your collection"
         : "No pending books for approval"
       }
     </p>
     <p className="text-sm text-muted-foreground">
-      {showMyBooksOnly 
-        ? "All your books have been reviewed" 
+      {showMyBooksOnly
+        ? "All your books have been reviewed"
         : "All books have been reviewed"
       }
     </p>
@@ -922,7 +913,7 @@ const EditBookDialog = ({ open, onOpenChange, selectedBook, editForm, setEditFor
             <Input
               id="title"
               value={editForm.title}
-              onChange={(e) => setEditForm({...editForm, title: e.target.value})}
+              onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
               placeholder="Book title"
             />
           </div>
@@ -931,7 +922,7 @@ const EditBookDialog = ({ open, onOpenChange, selectedBook, editForm, setEditFor
             <Input
               id="author"
               value={editForm.author}
-              onChange={(e) => setEditForm({...editForm, author: e.target.value})}
+              onChange={(e) => setEditForm({ ...editForm, author: e.target.value })}
               placeholder="Author name"
             />
           </div>
@@ -945,13 +936,13 @@ const EditBookDialog = ({ open, onOpenChange, selectedBook, editForm, setEditFor
               type="number"
               step="0.01"
               value={editForm.price}
-              onChange={(e) => setEditForm({...editForm, price: e.target.value})}
+              onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
               placeholder="0.00"
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="currency">Currency</Label>
-            <Select value={editForm.currency} onValueChange={(value) => setEditForm({...editForm, currency: value})}>
+            <Select value={editForm.currency} onValueChange={(value) => setEditForm({ ...editForm, currency: value })}>
               <SelectTrigger>
                 <SelectValue placeholder="Select currency" />
               </SelectTrigger>
@@ -969,7 +960,7 @@ const EditBookDialog = ({ open, onOpenChange, selectedBook, editForm, setEditFor
           <Textarea
             id="description"
             value={editForm.description}
-            onChange={(e) => setEditForm({...editForm, description: e.target.value})}
+            onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
             placeholder="Book description"
             rows={4}
           />
@@ -981,7 +972,7 @@ const EditBookDialog = ({ open, onOpenChange, selectedBook, editForm, setEditFor
             <Input
               id="category"
               value={editForm.category}
-              onChange={(e) => setEditForm({...editForm, category: e.target.value})}
+              onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
               placeholder="Book category"
             />
           </div>
@@ -990,7 +981,7 @@ const EditBookDialog = ({ open, onOpenChange, selectedBook, editForm, setEditFor
             <Input
               id="language"
               value={editForm.language}
-              onChange={(e) => setEditForm({...editForm, language: e.target.value})}
+              onChange={(e) => setEditForm({ ...editForm, language: e.target.value })}
               placeholder="Book language"
             />
           </div>
@@ -1003,7 +994,7 @@ const EditBookDialog = ({ open, onOpenChange, selectedBook, editForm, setEditFor
               id="totalPages"
               type="number"
               value={editForm.totalPages}
-              onChange={(e) => setEditForm({...editForm, totalPages: e.target.value})}
+              onChange={(e) => setEditForm({ ...editForm, totalPages: e.target.value })}
               placeholder="Number of pages"
             />
           </div>
@@ -1014,7 +1005,7 @@ const EditBookDialog = ({ open, onOpenChange, selectedBook, editForm, setEditFor
               type="number"
               step="0.01"
               value={editForm.discountPercentage}
-              onChange={(e) => setEditForm({...editForm, discountPercentage: e.target.value})}
+              onChange={(e) => setEditForm({ ...editForm, discountPercentage: e.target.value })}
               placeholder="0"
             />
           </div>
@@ -1024,7 +1015,7 @@ const EditBookDialog = ({ open, onOpenChange, selectedBook, editForm, setEditFor
               id="publicationYear"
               type="number"
               value={editForm.publicationYear}
-              onChange={(e) => setEditForm({...editForm, publicationYear: e.target.value})}
+              onChange={(e) => setEditForm({ ...editForm, publicationYear: e.target.value })}
               placeholder="2024"
             />
           </div>
@@ -1036,7 +1027,7 @@ const EditBookDialog = ({ open, onOpenChange, selectedBook, editForm, setEditFor
             <Input
               id="publisher"
               value={editForm.publisher}
-              onChange={(e) => setEditForm({...editForm, publisher: e.target.value})}
+              onChange={(e) => setEditForm({ ...editForm, publisher: e.target.value })}
               placeholder="Publisher name"
             />
           </div>
@@ -1045,7 +1036,7 @@ const EditBookDialog = ({ open, onOpenChange, selectedBook, editForm, setEditFor
             <Input
               id="isbn"
               value={editForm.isbn}
-              onChange={(e) => setEditForm({...editForm, isbn: e.target.value})}
+              onChange={(e) => setEditForm({ ...editForm, isbn: e.target.value })}
               placeholder="ISBN number"
             />
           </div>
@@ -1056,7 +1047,7 @@ const EditBookDialog = ({ open, onOpenChange, selectedBook, editForm, setEditFor
           <Textarea
             id="authorBio"
             value={editForm.authorBio}
-            onChange={(e) => setEditForm({...editForm, authorBio: e.target.value})}
+            onChange={(e) => setEditForm({ ...editForm, authorBio: e.target.value })}
             placeholder="Author biography"
             rows={3}
           />
@@ -1067,7 +1058,7 @@ const EditBookDialog = ({ open, onOpenChange, selectedBook, editForm, setEditFor
           <Input
             id="tags"
             value={editForm.tags}
-            onChange={(e) => setEditForm({...editForm, tags: e.target.value})}
+            onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })}
             placeholder="fiction, science, technology"
           />
         </div>
@@ -1077,7 +1068,7 @@ const EditBookDialog = ({ open, onOpenChange, selectedBook, editForm, setEditFor
             <Switch
               id="featured"
               checked={editForm.featured}
-              onCheckedChange={(checked) => setEditForm({...editForm, featured: checked})}
+              onCheckedChange={(checked) => setEditForm({ ...editForm, featured: checked })}
             />
             <Label htmlFor="featured">Featured</Label>
           </div>
@@ -1085,7 +1076,7 @@ const EditBookDialog = ({ open, onOpenChange, selectedBook, editForm, setEditFor
             <Switch
               id="bestseller"
               checked={editForm.bestseller}
-              onCheckedChange={(checked) => setEditForm({...editForm, bestseller: checked})}
+              onCheckedChange={(checked) => setEditForm({ ...editForm, bestseller: checked })}
             />
             <Label htmlFor="bestseller">Bestseller</Label>
           </div>
@@ -1093,7 +1084,7 @@ const EditBookDialog = ({ open, onOpenChange, selectedBook, editForm, setEditFor
             <Switch
               id="newRelease"
               checked={editForm.newRelease}
-              onCheckedChange={(checked) => setEditForm({...editForm, newRelease: checked})}
+              onCheckedChange={(checked) => setEditForm({ ...editForm, newRelease: checked })}
             />
             <Label htmlFor="newRelease">New Release</Label>
           </div>
@@ -1160,8 +1151,8 @@ const RejectDialog = ({ open, onOpenChange, selectedBook, rejectionReason, setRe
         <Button variant="outline" onClick={() => onOpenChange(false)}>
           Cancel
         </Button>
-        <Button 
-          variant="destructive" 
+        <Button
+          variant="destructive"
           onClick={onConfirm}
           disabled={!rejectionReason.trim()}
         >
@@ -1173,18 +1164,18 @@ const RejectDialog = ({ open, onOpenChange, selectedBook, rejectionReason, setRe
 );
 
 // Preview Dialog Component
-const PreviewDialog = ({ 
-  open, 
-  onOpenChange, 
-  selectedBook, 
-  getMyBook, 
-  getStatusBadge, 
-  getFeaturedBadge, 
-  getBestsellerBadge, 
-  getNewReleaseBadge, 
-  getCurrentImage, 
-  getImageAlt, 
-  handleImageError 
+const PreviewDialog = ({
+  open,
+  onOpenChange,
+  selectedBook,
+  getMyBook,
+  getStatusBadge,
+  getFeaturedBadge,
+  getBestsellerBadge,
+  getNewReleaseBadge,
+  getCurrentImage,
+  getImageAlt,
+  handleImageError
 }: any) => (
   <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="max-w-4xl">
@@ -1222,11 +1213,11 @@ const PreviewDialog = ({
                 </Badge>
               )}
             </div>
-            
+
             <p className="text-sm text-muted-foreground leading-relaxed">
               {selectedBook?.description}
             </p>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
                 <h4 className="font-semibold mb-2">Book Details</h4>

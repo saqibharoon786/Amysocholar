@@ -21,9 +21,12 @@ const BookFestival = () => {
           
           <div className="text-center md:text-left">
             <p className="text-sm uppercase tracking-wide text-muted-foreground mb-4">Shop wide range of collections</p>
-            <h2 className="text-5xl font-bold mb-6 text-primary">BOOK FESTIVAL</h2>
+            <h2 className="text-5xl font-bold mb-6 text-blue-900 dark:text-blue-800">BOOK FESTIVAL</h2>
             <p className="text-lg mb-2">ALL BOOKS ARE FLAT <span className="font-bold text-2xl">50% OFF</span></p>
-            <Button size="lg" className="mt-6">
+            <Button 
+              size="lg" 
+              className="mt-6 bg-blue-900 hover:bg-blue-800 text-white dark:bg-blue-800 dark:hover:bg-blue-700"
+            >
               Shop Now
             </Button>
           </div>

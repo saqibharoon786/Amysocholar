@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Lock, Loader2, ExternalLink } from "lucide-react";
+import api from "@/services/api";
 
 interface SafePayButtonProps {
   bookId: string;
@@ -11,37 +12,26 @@ interface SafePayButtonProps {
   onError?: (error: string) => void;
 }
 
-const SafePayButton = ({ bookId, amount, currency, onSuccess, onError }: SafePayButtonProps) => {
+const SafePayButton = ({ bookId, onError }: SafePayButtonProps) => {
   const [loading, setLoading] = useState(false);
 
   const handleSafePayPurchase = async () => {
     try {
       setLoading(true);
-      
-      // Call your purchase endpoint with SafePay
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/book/${bookId}/purchase`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        },
-        body: JSON.stringify({
-          format: 'pdf',
-          paymentMethod: 'safepay'
-        })
+      const { data } = await api.post<{ success: boolean; message?: string; payment?: { paymentUrl: string }; redirectUrl?: string }>('/payments/create', {
+        bookId,
+        paymentMethod: 'safepay'
       });
 
-      const data = await response.json();
-
-      if (data.success && data.data?.paymentUrl) {
-        // Redirect to SafePay
-        window.location.href = data.data.paymentUrl;
+      const paymentUrl = data?.payment?.paymentUrl ?? data?.redirectUrl;
+      if (data?.success && paymentUrl) {
+        window.location.href = paymentUrl;
       } else {
-        onError?.(data.message || 'Payment initiation failed');
+        onError?.(data?.message || 'Payment initiation failed');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('SafePay error:', error);
-      onError?.('Failed to process payment');
+      onError?.(error?.response?.data?.message || error?.message || 'Failed to process payment');
     } finally {
       setLoading(false);
     }

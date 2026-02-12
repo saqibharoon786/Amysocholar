@@ -5,10 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen, Loader2 } from "lucide-react";
+import { Loader2, Lock, Mail, User, Phone, Eye, EyeOff, Key } from "lucide-react";
 import type { UserRole, VerificationMethod } from "@/services/authService";
 
 const Auth = () => {
@@ -16,7 +14,8 @@ const Auth = () => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
-  const [hasRedirected, setHasRedirected] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -54,25 +53,25 @@ const Auth = () => {
   const hasRedirectedRef = useRef(false);
 
   // Watch for user changes and redirect accordingly - FIXED VERSION
-useEffect(() => {
-  if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/superadmin')) {
-    return;
-  }
-
-  if (user && !hasRedirectedRef.current) {
-    console.log("User detected in useEffect, redirecting...", user.role);
-    hasRedirectedRef.current = true;
-    
-    // FIXED: Use else-if for proper conditional flow
-    if (user.role === "superadmin") {
-      navigate("/superadmin/dashboard", { replace: true });
-    } else if (user.role === "admin") {
-      navigate("/admin/dashboard", { replace: true });
-    } else {
-      navigate("/", { replace: true });
+  useEffect(() => {
+    if (location.pathname.startsWith('/admin') || location.pathname.startsWith('/superadmin')) {
+      return;
     }
-  }
-}, [user, navigate, location.pathname]);
+
+    if (user && !hasRedirectedRef.current) {
+      console.log("User detected in useEffect, redirecting...", user.role);
+      hasRedirectedRef.current = true;
+      
+      // FIXED: Use else-if for proper conditional flow
+      if (user.role === "superadmin") {
+        navigate("/superadmin/dashboard", { replace: true });
+      } else if (user.role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
+    }
+  }, [user, navigate, location.pathname]);
 
   // Reset the redirect flag when user becomes null (logout)
   useEffect(() => {
@@ -84,10 +83,10 @@ useEffect(() => {
   // Show loading while checking authentication
   if (isLoadingUser) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-secondary/30">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p>Checking authentication...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-white" />
+          <p className="text-white/70">Checking authentication...</p>
         </div>
       </div>
     );
@@ -96,10 +95,10 @@ useEffect(() => {
   // If user is already authenticated and we're on the auth page, show redirect message
   if (user && location.pathname === '/auth') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-secondary/30">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
         <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p>Redirecting...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-white" />
+          <p className="text-white/70">Redirecting...</p>
         </div>
       </div>
     );
@@ -197,46 +196,51 @@ useEffect(() => {
   // OTP Verification Screen
   if (isVerifying) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-secondary/30 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <BookOpen className="h-12 w-12 text-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+        <div className="w-full max-w-md bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl p-8 space-y-6">
+          {/* Simple Header */}
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/10 border border-white/20">
+              <Key className="h-8 w-8 text-white" />
             </div>
-            <CardTitle className="text-2xl">Verify Your Email</CardTitle>
-            <CardDescription>
+            <h2 className="text-2xl font-bold text-white">Verify Your Email</h2>
+            <p className="text-white/70">
               Enter the 6-digit code sent to {formData.email}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleVerifyEmail} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="verificationCode">Verification Code</Label>
-                <Input
-                  id="verificationCode"
-                  type="text"
-                  placeholder="Enter 6-digit code"
-                  value={formData.verificationCode}
-                  onChange={(e) => handleInputChange("verificationCode", e.target.value)}
-                  maxLength={6}
-                  required
-                  disabled={isVerifyingEmail}
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full"
+            </p>
+          </div>
+
+          <form onSubmit={handleVerifyEmail} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="verificationCode" className="text-white/90">Verification Code</Label>
+              <Input
+                id="verificationCode"
+                type="text"
+                placeholder="Enter 6-digit code"
+                value={formData.verificationCode}
+                onChange={(e) => handleInputChange("verificationCode", e.target.value)}
+                maxLength={6}
+                required
                 disabled={isVerifyingEmail}
-              >
-                {isVerifyingEmail && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Verify Email
-              </Button>
+                className="bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-white/20"
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+              disabled={isVerifyingEmail}
+            >
+              {isVerifyingEmail && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Verify Email
+            </Button>
+            
+            <div className="space-y-3">
               <div className="text-center">
                 <Button
                   type="button"
-                  variant="link"
+                  variant="ghost"
                   onClick={handleResendVerification}
                   disabled={isResendingVerification}
+                  className="text-white/70 hover:text-white hover:bg-white/10"
                 >
                   {isResendingVerification && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Resend Code
@@ -251,13 +255,14 @@ useEffect(() => {
                     setIsSignup(true);
                   }}
                   disabled={isVerifyingEmail}
+                  className="text-white/60 hover:text-white hover:bg-white/10 text-sm"
                 >
-                  Back to Sign Up
+                  ← Back to Sign Up
                 </Button>
               </div>
-            </form>
-          </CardContent>
-        </Card>
+            </div>
+          </form>
+        </div>
       </div>
     );
   }
@@ -265,69 +270,88 @@ useEffect(() => {
   // Password Reset Screen
   if (isResettingPassword) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-secondary/30 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <BookOpen className="h-12 w-12 text-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+        <div className="w-full max-w-md bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl p-8 space-y-6">
+          {/* Simple Header */}
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/10 border border-white/20">
+              <Key className="h-8 w-8 text-white" />
             </div>
-            <CardTitle className="text-2xl">Reset Password</CardTitle>
-            <CardDescription>
+            <h2 className="text-2xl font-bold text-white">Reset Password</h2>
+            <p className="text-white/70">
               Enter the verification code and new password
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleResetPassword} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="resetCode">Verification Code</Label>
-                <Input
-                  id="resetCode"
-                  type="text"
-                  placeholder="Enter 6-digit code"
-                  value={formData.verificationCode}
-                  onChange={(e) => handleInputChange("verificationCode", e.target.value)}
-                  maxLength={6}
-                  required
-                  disabled={isResettingPasswordMutation}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
+            </p>
+          </div>
+
+          <form onSubmit={handleResetPassword} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="resetCode" className="text-white/90">Verification Code</Label>
+              <Input
+                id="resetCode"
+                type="text"
+                placeholder="Enter 6-digit code"
+                value={formData.verificationCode}
+                onChange={(e) => handleInputChange("verificationCode", e.target.value)}
+                maxLength={6}
+                required
+                disabled={isResettingPasswordMutation}
+                className="bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-white/20"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="newPassword" className="text-white/90">New Password</Label>
+              <div className="relative">
                 <Input
                   id="newPassword"
-                  type="password"
+                  type={showNewPassword ? "text" : "password"}
                   placeholder="Enter new password"
                   value={formData.newPassword}
                   onChange={(e) => handleInputChange("newPassword", e.target.value)}
                   minLength={8}
                   required
                   disabled={isResettingPasswordMutation}
+                  className="bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-white/20 pr-10"
                 />
-              </div>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isResettingPasswordMutation}
-              >
-                {isResettingPasswordMutation && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Reset Password
-              </Button>
-              <div className="text-center">
-                <Button
+                <button
                   type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    setIsResettingPassword(false);
-                    setIsForgotPassword(true);
-                  }}
-                  disabled={isResettingPasswordMutation}
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/50 hover:text-white"
                 >
-                  Back
-                </Button>
+                  {showNewPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
               </div>
-            </form>
-          </CardContent>
-        </Card>
+            </div>
+            
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+              disabled={isResettingPasswordMutation}
+            >
+              {isResettingPasswordMutation && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Reset Password
+            </Button>
+            
+            <div className="text-center">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setIsResettingPassword(false);
+                  setIsForgotPassword(true);
+                }}
+                disabled={isResettingPasswordMutation}
+                className="text-white/60 hover:text-white hover:bg-white/10 text-sm"
+              >
+                ← Back
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
     );
   }
@@ -335,81 +359,107 @@ useEffect(() => {
   // Forgot Password Screen
   if (isForgotPassword) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-secondary/30 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <BookOpen className="h-12 w-12 text-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+        <div className="w-full max-w-md bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl p-8 space-y-6">
+          {/* Simple Header */}
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/10 border border-white/20">
+              <Mail className="h-8 w-8 text-white" />
             </div>
-            <CardTitle className="text-2xl">Reset Password</CardTitle>
-            <CardDescription>
+            <h2 className="text-2xl font-bold text-white">Reset Password</h2>
+            <p className="text-white/70">
               Enter your email to receive a reset code
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleForgotPassword} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="forgotEmail">Email</Label>
-                <Input
-                  id="forgotEmail"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
-                  required
-                  disabled={isSendingResetCode}
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full"
+            </p>
+          </div>
+
+          <form onSubmit={handleForgotPassword} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="forgotEmail" className="text-white/90">Email</Label>
+              <Input
+                id="forgotEmail"
+                type="email"
+                placeholder="Enter your email"
+                value={formData.email}
+                onChange={(e) => handleInputChange("email", e.target.value)}
+                required
                 disabled={isSendingResetCode}
+                className="bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-white/20"
+              />
+            </div>
+            
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+              disabled={isSendingResetCode}
+            >
+              {isSendingResetCode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Send Reset Code
+            </Button>
+            
+            <div className="text-center">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setIsForgotPassword(false);
+                  setIsSignup(false);
+                }}
+                disabled={isSendingResetCode}
+                className="text-white/60 hover:text-white hover:bg-white/10 text-sm"
               >
-                {isSendingResetCode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Send Reset Code
+                ← Back to Sign In
               </Button>
-              <div className="text-center">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    setIsForgotPassword(false);
-                    setIsSignup(false);
-                  }}
-                  disabled={isSendingResetCode}
-                >
-                  Back to Sign In
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+            </div>
+          </form>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-secondary/30 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <BookOpen className="h-12 w-12 text-primary" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+      <div className="w-full max-w-md bg-white/10 backdrop-blur-lg rounded-2xl border border-white/20 shadow-2xl p-8 space-y-6">
+        {/* Simple Header */}
+        <div className="text-center space-y-3">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/10 border border-white/20">
+            <Lock className="h-8 w-8 text-white" />
           </div>
-          <CardTitle className="text-3xl">Law Bookstore</CardTitle>
-          <CardDescription>Sign in to your account or create a new one</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={isSignup ? "signup" : "signin"} onValueChange={(v) => setIsSignup(v === "signup")}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
+          <h2 className="text-3xl font-bold text-white">Law Bookstore</h2>
+          <p className="text-white/70">Sign in to your account or create a new one</p>
+        </div>
 
-            {/* Sign In Tab */}
-            <TabsContent value="signin">
-              <form onSubmit={handleSignin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+        {/* Tabs */}
+        <div className="space-y-6">
+          <div className="flex bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-1">
+            <button
+              onClick={() => setIsSignup(false)}
+              className={`flex-1 py-2 rounded-md transition-all ${
+                !isSignup 
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow' 
+                  : 'text-white/70 hover:text-white'
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => setIsSignup(true)}
+              className={`flex-1 py-2 rounded-md transition-all ${
+                isSignup 
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow' 
+                  : 'text-white/70 hover:text-white'
+              }`}
+            >
+              Sign Up
+            </button>
+          </div>
+
+          {/* Sign In Form */}
+          {!isSignup ? (
+            <form onSubmit={handleSignin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-white/90">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
                   <Input
                     id="email"
                     type="email"
@@ -418,47 +468,64 @@ useEffect(() => {
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     required
                     disabled={isLoggingIn}
+                    className="bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-white/20 pl-10"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-white/90">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     value={formData.password}
                     onChange={(e) => handleInputChange("password", e.target.value)}
                     required
                     disabled={isLoggingIn}
+                    className="bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-white/20 pl-10 pr-10"
                   />
-                </div>
-                <div className="text-right">
-                  <Button
+                  <button
                     type="button"
-                    variant="link"
-                    className="px-0"
-                    onClick={() => setIsForgotPassword(true)}
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/50 hover:text-white"
                   >
-                    Forgot password?
-                  </Button>
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
+              </div>
+              <div className="text-right">
                 <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isLoggingIn}
+                  type="button"
+                  variant="link"
+                  className="px-0 text-white/70 hover:text-white"
+                  onClick={() => setIsForgotPassword(true)}
                 >
-                  {isLoggingIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Sign In
+                  Forgot password?
                 </Button>
-              </form>
-            </TabsContent>
-
-            {/* Sign Up Tab */}
-            <TabsContent value="signup">
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
+              </div>
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                disabled={isLoggingIn}
+              >
+                {isLoggingIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Sign In
+              </Button>
+            </form>
+          ) : (
+            /* Sign Up Form */
+            <form onSubmit={handleSignup} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName" className="text-white/90">First Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
                     <Input
                       id="firstName"
                       type="text"
@@ -467,10 +534,14 @@ useEffect(() => {
                       onChange={(e) => handleInputChange("firstName", e.target.value)}
                       required
                       disabled={isRegistering}
+                      className="bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-white/20 pl-10 text-sm"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName" className="text-white/90">Last Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
                     <Input
                       id="lastName"
                       type="text"
@@ -479,12 +550,16 @@ useEffect(() => {
                       onChange={(e) => handleInputChange("lastName", e.target.value)}
                       required
                       disabled={isRegistering}
+                      className="bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-white/20 pl-10 text-sm"
                     />
                   </div>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+              <div className="space-y-2">
+                <Label htmlFor="signup-email" className="text-white/90">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
                   <Input
                     id="signup-email"
                     type="email"
@@ -493,11 +568,15 @@ useEffect(() => {
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     required
                     disabled={isRegistering}
+                    className="bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-white/20 pl-10"
                   />
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-white/90">Phone Number</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
                   <Input
                     id="phone"
                     type="tel"
@@ -506,11 +585,15 @@ useEffect(() => {
                     onChange={(e) => handleInputChange("phone", e.target.value)}
                     required
                     disabled={isRegistering}
+                    className="bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-white/20 pl-10"
                   />
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+              <div className="space-y-2">
+                <Label htmlFor="signup-password" className="text-white/90">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
                   <Input
                     id="signup-password"
                     type="password"
@@ -520,37 +603,45 @@ useEffect(() => {
                     minLength={8}
                     required
                     disabled={isRegistering}
+                    className="bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-white/20 pl-10"
                   />
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="role">Account Type</Label>
-                  <select
-                    id="role"
-                    value={formData.role}
-                    onChange={(e) => handleInputChange("role", e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    required
-                    disabled={isRegistering}
-                  >
-                    <option value="customer">Customer</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full"
+              <div className="space-y-2">
+                <Label htmlFor="role" className="text-white/90">Account Type</Label>
+                <select
+                  id="role"
+                  value={formData.role}
+                  onChange={(e) => handleInputChange("role", e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-white/20 bg-white/5 px-3 py-2 text-sm text-white ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  required
                   disabled={isRegistering}
                 >
-                  {isRegistering && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Create Account
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+                  <option value="customer" className="bg-gray-900">Customer</option>
+                  <option value="admin" className="bg-gray-900">Admin</option>
+                </select>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                disabled={isRegistering}
+              >
+                {isRegistering && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Create Account
+              </Button>
+            </form>
+          )}
+        </div>
+
+        {/* Simple footer text */}
+        <div className="pt-4 border-t border-white/20">
+          <p className="text-center text-white/50 text-sm">
+            By continuing, you agree to our Terms and Privacy Policy
+          </p>
+        </div>
+      </div>
     </div>
   );
 };

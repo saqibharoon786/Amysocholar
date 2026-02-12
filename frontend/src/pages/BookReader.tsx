@@ -1,9 +1,9 @@
-// pages/BookReader.tsx - Complete updated version with proper progress
+// pages/BookReader.tsx - Complete version with navy blue color scheme from BookActions
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { BookService } from "@/services/bookService";
+import { BookService } from "@/services/BookService";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Loader2,
@@ -75,6 +75,28 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+
+// NAVY BLUE COLOR SCHEME from BookActions
+const colors = {
+  navy: '#1a2a4a',
+  navyLight: '#2d4270',
+  navyDark: '#0f1a2e',
+  navyMuted: '#e8edf5',
+  navyForeground: '#f8fafc',
+  gold: '#d4a418',
+  goldLight: '#e8b92f',
+  goldMuted: '#fef9e7',
+  success: '#166534',
+  successLight: '#22c55e',
+  successMuted: '#dcfce7',
+  successForeground: '#ffffff',
+  warning: '#d97706',
+  warningMuted: '#fef3c7',
+  border: '#e2e8f0',
+  background: '#ffffff',
+  foreground: '#1e293b',
+  muted: '#64748b',
+};
 
 const BookReader = () => {
   const { id } = useParams<{ id: string }>();
@@ -355,7 +377,7 @@ const BookReader = () => {
       // Show completion toast
       toast.success(
         <div className="flex items-center gap-2">
-          <CheckCircle className="w-5 h-5 text-green-500" />
+          <CheckCircle className="w-5 h-5" style={{ color: colors.success }} />
           <div>
             <p className="font-semibold">Congratulations! 🎉</p>
             <p className="text-sm">You've finished reading this book!</p>
@@ -527,7 +549,7 @@ const BookReader = () => {
     
     // Find the search term in the original HTML
     const searchRegex = new RegExp(`(${searchQuery})`, 'gi');
-    const highlightedHTML = bookContent.replace(searchRegex, '<mark class="bg-yellow-300 text-black px-1 rounded">$1</mark>');
+    const highlightedHTML = bookContent.replace(searchRegex, `<mark style="background-color: ${colors.goldMuted}; color: ${colors.gold};">$1</mark>`);
     
     // Update content with highlighted version
     contentRef.current.innerHTML = highlightedHTML;
@@ -688,38 +710,6 @@ const BookReader = () => {
     });
   };
 
-  // Theme styles
-  const themeStyles = {
-    light: {
-      bg: "bg-white",
-      text: "text-gray-900",
-      contentBg: "bg-white",
-      border: "border-gray-200",
-      highlight: "bg-yellow-100",
-    },
-    dark: {
-      bg: "bg-gray-900",
-      text: "text-gray-100",
-      contentBg: "bg-gray-800",
-      border: "border-gray-700",
-      highlight: "bg-yellow-900",
-    },
-    sepia: {
-      bg: "bg-amber-50",
-      text: "text-amber-900",
-      contentBg: "bg-amber-50",
-      border: "border-amber-200",
-      highlight: "bg-amber-200",
-    },
-    night: {
-      bg: "bg-gray-950",
-      text: "text-gray-100",
-      contentBg: "bg-gray-900",
-      border: "border-gray-800",
-      highlight: "bg-yellow-800",
-    },
-  };
-
   // Handle PDF view
   const handleViewPDF = () => {
     if (!bookInfo?.pdfFile) {
@@ -733,7 +723,9 @@ const BookReader = () => {
     }
     
     // Open PDF in new tab or embedded viewer
-    const pdfUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}${bookInfo.pdfFile}`;
+    const apiBase = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
+    const path = bookInfo.pdfFile.startsWith('http') ? bookInfo.pdfFile : `${apiBase}${bookInfo.pdfFile.startsWith('/') ? '' : '/'}${bookInfo.pdfFile}`;
+    const pdfUrl = path;
     window.open(pdfUrl, '_blank');
   };
 
@@ -787,22 +779,29 @@ const BookReader = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/10">
+      <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: colors.navyMuted }}>
         <div className="text-center space-y-6">
           <div className="relative">
-            <BookOpen className="w-16 h-16 text-primary animate-pulse mx-auto" />
-            <Loader2 className="w-8 h-8 text-primary animate-spin absolute -top-2 -right-2" />
+            <BookOpen className="w-16 h-16 mx-auto animate-pulse" style={{ color: colors.navy }} />
+            <Loader2 className="w-8 h-8 animate-spin absolute -top-2 -right-2" style={{ color: colors.navy }} />
           </div>
           <div>
-            <h2 className="text-2xl font-bold mb-2">Loading Book</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-2xl font-bold mb-2" style={{ color: colors.navy }}>Loading Book</h2>
+            <p className="mb-2" style={{ color: colors.navy }}>
               {isTextFormat ? "Fetching text content..." : "Loading PDF document..."}
             </p>
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-sm mb-2" style={{ color: colors.navy }}>
               Please wait while we prepare your reading experience
             </p>
           </div>
-          <Progress value={45} className="w-64" />
+          <Progress 
+            value={45} 
+            className="w-64" 
+            style={{ 
+              backgroundColor: colors.navyMuted,
+              ['--progress-background' as any]: colors.navy 
+            }}
+          />
         </div>
       </div>
     );
@@ -810,24 +809,24 @@ const BookReader = () => {
 
   if (error || needsPurchase) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/10 p-4">
-        <Card className="w-full max-w-md border-2 shadow-xl">
+      <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: colors.navyMuted }}>
+        <Card className="w-full max-w-md border-2 shadow-xl" style={{ borderColor: colors.navy, backgroundColor: colors.background }}>
           <CardContent className="p-6 text-center">
             {needsPurchase ? (
               <>
-                <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
-                  <AlertCircle className="w-8 h-8 text-amber-600" />
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: colors.navyMuted }}>
+                  <AlertCircle className="w-8 h-8" style={{ color: colors.navy }} />
                 </div>
-                <h2 className="text-2xl font-bold mb-2">Purchase Required</h2>
+                <h2 className="text-2xl font-bold mb-2" style={{ color: colors.navy }}>Purchase Required</h2>
                 <p className="text-muted-foreground mb-4">
                   You need to purchase this book to access the {format === "pdf" ? "PDF" : "full"} version.
                 </p>
                 {bookInfo && (
-                  <div className="mb-6 p-4 bg-secondary/20 rounded-lg">
-                    <h3 className="font-semibold mb-1">{bookInfo.title}</h3>
+                  <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: colors.navyMuted }}>
+                    <h3 className="font-semibold mb-1" style={{ color: colors.navy }}>{bookInfo.title}</h3>
                     <p className="text-sm text-muted-foreground mb-2">by {bookInfo.author}</p>
                     <div className="flex items-center justify-center gap-2">
-                      <span className="text-lg font-bold">
+                      <span className="text-lg font-bold" style={{ color: colors.navy }}>
                         ${bookInfo.price}
                       </span>
                       {bookInfo.discountPercentage && (
@@ -839,11 +838,19 @@ const BookReader = () => {
                   </div>
                 )}
                 <div className="flex gap-3 justify-center">
-                  <Button onClick={handlePurchase} className="gap-2">
+                  <Button 
+                    onClick={handlePurchase} 
+                    className="gap-2"
+                    style={{ backgroundColor: colors.navy, color: colors.navyForeground }}
+                  >
                     <ShoppingCart className="w-4 h-4" />
                     Purchase Now
                   </Button>
-                  <Button variant="outline" onClick={() => navigate(`/book/${id}`)}>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate(`/book/${id}`)}
+                    style={{ borderColor: colors.navy, color: colors.navy }}
+                  >
                     View Details
                   </Button>
                 </div>
@@ -853,14 +860,21 @@ const BookReader = () => {
                 <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
                   <X className="w-8 h-8 text-red-600" />
                 </div>
-                <h2 className="text-2xl font-bold mb-2">Failed to Load Book</h2>
+                <h2 className="text-2xl font-bold mb-2" style={{ color: colors.navy }}>Failed to Load Book</h2>
                 <p className="text-muted-foreground mb-4">{error}</p>
                 <div className="flex gap-3 justify-center">
-                  <Button onClick={() => loadBookContent()}>
+                  <Button 
+                    onClick={() => loadBookContent()} 
+                    style={{ backgroundColor: colors.navy, color: colors.navyForeground }}
+                  >
                     <Loader2 className="w-4 h-4 mr-2" />
                     Try Again
                   </Button>
-                  <Button variant="outline" onClick={() => navigate(-1)}>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate(-1)}
+                    style={{ borderColor: colors.navy, color: colors.navy }}
+                  >
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Go Back
                   </Button>
@@ -873,33 +887,51 @@ const BookReader = () => {
     );
   }
 
-  const currentTheme = themeStyles[theme];
+  const currentTheme = {
+    bg: colors.navyMuted,
+    text: colors.foreground,
+    contentBg: colors.background,
+    border: colors.border,
+    highlight: colors.goldMuted,
+  };
+  
   const readTime = estimatedReadingTime || Math.ceil(wordCount / 200);
   const progressPercentage = Math.round(readingProgress);
 
   return (
-    <div className={`min-h-screen ${currentTheme.bg} ${currentTheme.text} transition-colors duration-300`}>
+    <div className="min-h-screen transition-colors duration-300" style={{ backgroundColor: colors.navyMuted }}>
       {/* Top Navigation Bar */}
-      <header className={`sticky top-0 z-50 ${currentTheme.bg} ${currentTheme.border} border-b backdrop-blur-sm`}>
+      <header className="sticky top-0 z-50 backdrop-blur-sm" style={{ 
+        backgroundColor: colors.navy, 
+        borderBottom: `1px solid ${colors.navyLight}`,
+        color: colors.navyForeground 
+      }}>
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            {/* Left side */}
+            {/* Left side - Back Button with Navy Blue */}
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate(-1)}
-                className="gap-2 hover:bg-primary/10"
+                className="gap-2"
+                style={{ 
+                  color: colors.navyForeground,
+                  backgroundColor: 'transparent',
+                  border: `1px solid ${colors.navyLight}`,
+                  borderRadius: '8px',
+                  padding: '6px 12px',
+                }}
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span className="hidden sm:inline">Back</span>
               </Button>
 
               <div className="hidden md:block max-w-xs">
-                <h1 className="text-sm font-semibold truncate">
+                <h1 className="text-sm font-semibold truncate" style={{ color: colors.navyForeground }}>
                   {bookInfo?.title || "Reading Book"}
                 </h1>
-                <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                <p className="text-xs truncate flex items-center gap-1" style={{ color: `${colors.navyForeground}90` }}>
                   <User className="w-3 h-3" />
                   {bookInfo?.author || "Unknown Author"}
                 </p>
@@ -909,7 +941,7 @@ const BookReader = () => {
             {/* Center - Reading Progress */}
             <div className="flex-1 max-w-2xl mx-2 sm:mx-4">
               <div className="flex items-center justify-center gap-2 sm:gap-4">
-                <div className="text-sm text-center">
+                <div className="text-sm text-center" style={{ color: colors.navyForeground }}>
                   <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2">
                     <div className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
@@ -923,7 +955,11 @@ const BookReader = () => {
                       <span>of</span>
                       <span>{totalPages}</span>
                       {isBookCompleted && (
-                        <Badge className="ml-1 bg-green-100 text-green-800 border-green-300 text-xs">
+                        <Badge className="ml-1" style={{ 
+                          backgroundColor: colors.success, 
+                          color: colors.successForeground,
+                          borderColor: colors.success 
+                        }}>
                           <CheckCircle className="w-3 h-3 mr-1" />
                           Completed
                         </Badge>
@@ -939,12 +975,13 @@ const BookReader = () => {
                   <div className="flex items-center justify-center gap-2 mt-1">
                     <Progress 
                       value={progressPercentage} 
-                      className={cn(
-                        "w-32 sm:w-48",
-                        isBookCompleted && "bg-green-100"
-                      )} 
+                      className="w-32 sm:w-48"
+                      style={{ 
+                        backgroundColor: colors.navyLight,
+                        ['--progress-background' as any]: colors.navyForeground
+                      }}
                     />
-                    <span className="text-xs font-medium min-w-[40px]">
+                    <span className="text-xs font-medium min-w-[40px]" style={{ color: colors.navyForeground }}>
                       {progressPercentage}%
                       {isBookCompleted && " ✅"}
                     </span>
@@ -961,6 +998,7 @@ const BookReader = () => {
                 onClick={() => setShowSearch(true)}
                 title="Search"
                 className="h-8 w-8"
+                style={{ color: colors.navyForeground, backgroundColor: 'transparent' }}
               >
                 <Search className="w-3.5 h-3.5" />
               </Button>
@@ -971,8 +1009,9 @@ const BookReader = () => {
                 onClick={toggleBookmark}
                 title="Bookmark this page"
                 className="h-8 w-8"
+                style={{ color: colors.navyForeground, backgroundColor: 'transparent' }}
               >
-                <Bookmark className={`w-3.5 h-3.5 ${bookmarks.length > 0 ? "fill-current text-primary" : ""}`} />
+                <Bookmark className={`w-3.5 h-3.5 ${bookmarks.length > 0 ? "fill-current" : ""}`} />
               </Button>
 
               <Button
@@ -981,6 +1020,7 @@ const BookReader = () => {
                 onClick={toggleFullscreen}
                 title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
                 className="h-8 w-8 hidden sm:inline-flex"
+                style={{ color: colors.navyForeground, backgroundColor: 'transparent' }}
               >
                 {isFullscreen ? (
                   <Minimize2 className="w-3.5 h-3.5" />
@@ -991,21 +1031,30 @@ const BookReader = () => {
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" title="Settings" className="h-8 w-8">
+                  <Button variant="ghost" size="icon" title="Settings" className="h-8 w-8" style={{ color: colors.navyForeground, backgroundColor: 'transparent' }}>
                     <Settings className="w-3.5 h-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-72">
-                  <DropdownMenuLabel>Reading Settings</DropdownMenuLabel>
+                <DropdownMenuContent align="end" className="w-72" style={{ 
+                  backgroundColor: colors.navy, 
+                  borderColor: colors.navyLight,
+                  color: colors.navyForeground 
+                }}>
+                  <DropdownMenuLabel style={{ color: colors.navyForeground }}>Reading Settings</DropdownMenuLabel>
                   
                   <div className="px-2 py-1.5">
-                    <Label className="text-xs">Theme</Label>
+                    <Label className="text-xs" style={{ color: colors.navyForeground }}>Theme</Label>
                     <div className="grid grid-cols-2 gap-1 mt-1">
                       <Button
                         size="sm"
                         variant={theme === "light" ? "default" : "outline"}
                         onClick={() => setTheme("light")}
                         className="justify-start"
+                        style={{
+                          backgroundColor: theme === "light" ? colors.navyLight : 'transparent',
+                          borderColor: colors.navyLight,
+                          color: colors.navyForeground
+                        }}
                       >
                         <Sun className="w-3 h-3 mr-2" />
                         Light
@@ -1015,6 +1064,11 @@ const BookReader = () => {
                         variant={theme === "dark" ? "default" : "outline"}
                         onClick={() => setTheme("dark")}
                         className="justify-start"
+                        style={{
+                          backgroundColor: theme === "dark" ? colors.navyLight : 'transparent',
+                          borderColor: colors.navyLight,
+                          color: colors.navyForeground
+                        }}
                       >
                         <Moon className="w-3 h-3 mr-2" />
                         Dark
@@ -1024,6 +1078,11 @@ const BookReader = () => {
                         variant={theme === "sepia" ? "default" : "outline"}
                         onClick={() => setTheme("sepia")}
                         className="justify-start"
+                        style={{
+                          backgroundColor: theme === "sepia" ? colors.navyLight : 'transparent',
+                          borderColor: colors.navyLight,
+                          color: colors.navyForeground
+                        }}
                       >
                         <BookText className="w-3 h-3 mr-2" />
                         Sepia
@@ -1033,6 +1092,11 @@ const BookReader = () => {
                         variant={theme === "night" ? "default" : "outline"}
                         onClick={() => setTheme("night")}
                         className="justify-start"
+                        style={{
+                          backgroundColor: theme === "night" ? colors.navyLight : 'transparent',
+                          borderColor: colors.navyLight,
+                          color: colors.navyForeground
+                        }}
                       >
                         <MoonStar className="w-3 h-3 mr-2" />
                         Night
@@ -1042,13 +1106,18 @@ const BookReader = () => {
 
                   {textFormat === "html" && (
                     <div className="px-2 py-1.5">
-                      <Label className="text-xs">View Mode</Label>
+                      <Label className="text-xs" style={{ color: colors.navyForeground }}>View Mode</Label>
                       <div className="flex gap-1 mt-1">
                         <Button
                           size="sm"
                           variant={viewMode === "clean" ? "default" : "outline"}
                           onClick={() => setViewMode("clean")}
                           className="flex-1"
+                          style={{
+                            backgroundColor: viewMode === "clean" ? colors.navyLight : 'transparent',
+                            borderColor: colors.navyLight,
+                            color: colors.navyForeground
+                          }}
                         >
                           Clean
                         </Button>
@@ -1057,6 +1126,11 @@ const BookReader = () => {
                           variant={viewMode === "original" ? "default" : "outline"}
                           onClick={() => setViewMode("original")}
                           className="flex-1"
+                          style={{
+                            backgroundColor: viewMode === "original" ? colors.navyLight : 'transparent',
+                            borderColor: colors.navyLight,
+                            color: colors.navyForeground
+                          }}
                         >
                           Original
                         </Button>
@@ -1064,10 +1138,10 @@ const BookReader = () => {
                     </div>
                   )}
 
-                  <Separator className="my-2" />
+                  <Separator className="my-2" style={{ backgroundColor: colors.navyLight }} />
 
                   <div className="px-2 py-1.5">
-                    <Label className="text-xs">Font Size: {fontSize}px</Label>
+                    <Label className="text-xs" style={{ color: colors.navyForeground }}>Font Size: {fontSize}px</Label>
                     <Slider
                       value={[fontSize]}
                       onValueChange={([value]) => setFontSize(value)}
@@ -1075,11 +1149,12 @@ const BookReader = () => {
                       max={32}
                       step={1}
                       className="mt-2"
+                      style={{ ['--slider-background' as any]: colors.navyLight }}
                     />
                   </div>
 
                   <div className="px-2 py-1.5">
-                    <Label className="text-xs">Line Height: {lineHeight.toFixed(1)}</Label>
+                    <Label className="text-xs" style={{ color: colors.navyForeground }}>Line Height: {lineHeight.toFixed(1)}</Label>
                     <Slider
                       value={[lineHeight]}
                       onValueChange={([value]) => setLineHeight(value)}
@@ -1087,15 +1162,21 @@ const BookReader = () => {
                       max={2.5}
                       step={0.1}
                       className="mt-2"
+                      style={{ ['--slider-background' as any]: colors.navyLight }}
                     />
                   </div>
 
                   <div className="px-2 py-1.5">
-                    <Label className="text-xs">Font Family</Label>
+                    <Label className="text-xs" style={{ color: colors.navyForeground }}>Font Family</Label>
                     <select
                       value={fontFamily}
                       onChange={(e) => setFontFamily(e.target.value)}
-                      className="w-full mt-1 p-2 text-sm border rounded bg-background"
+                      className="w-full mt-1 p-2 text-sm border rounded"
+                      style={{ 
+                        backgroundColor: colors.navyDark, 
+                        borderColor: colors.navyLight, 
+                        color: colors.navyForeground 
+                      }}
                     >
                       <option value="'Merriweather', Georgia, serif">Merriweather</option>
                       <option value="'Georgia', serif">Georgia</option>
@@ -1111,43 +1192,63 @@ const BookReader = () => {
 
               <Sheet open={showTableOfContents} onOpenChange={setShowTableOfContents}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" title="Table of Contents" className="h-8 w-8">
+                  <Button variant="ghost" size="icon" title="Table of Contents" className="h-8 w-8" style={{ color: colors.navyForeground, backgroundColor: 'transparent' }}>
                     <Menu className="w-3.5 h-3.5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-80 sm:w-96">
+                <SheetContent side="left" className="w-80 sm:w-96" style={{ 
+                  backgroundColor: colors.navy, 
+                  borderColor: colors.navyLight 
+                }}>
                   <SheetHeader>
-                    <SheetTitle className="flex items-center gap-2">
+                    <SheetTitle className="flex items-center gap-2" style={{ color: colors.navyForeground }}>
                       <BookOpen className="w-4 h-4" />
                       {bookInfo?.title || "Book"}
                     </SheetTitle>
                   </SheetHeader>
                   <div className="py-4">
                     {/* Book Info */}
-                    <div className="mb-6 p-3 bg-secondary/20 rounded-lg">
+                    <div className="mb-6 p-3 rounded-lg" style={{ 
+                      backgroundColor: colors.navyDark, 
+                      border: `1px solid ${colors.navyLight}` 
+                    }}>
                       <div className="flex items-start gap-3">
                         {bookInfo?.coverImages?.[0] && (
                           <img
                             src={bookInfo.coverImages[0]}
                             alt={bookInfo.title}
                             className="w-12 h-16 object-cover rounded"
+                            style={{ border: `1px solid ${colors.navyLight}` }}
                           />
                         )}
                         <div>
-                          <h3 className="font-semibold text-sm">{bookInfo?.title}</h3>
-                          <p className="text-xs text-muted-foreground">by {bookInfo?.author}</p>
+                          <h3 className="font-semibold text-sm" style={{ color: colors.navyForeground }}>{bookInfo?.title}</h3>
+                          <p className="text-xs" style={{ color: `${colors.navyForeground}90` }}>by {bookInfo?.author}</p>
                           <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs" style={{ 
+                              borderColor: colors.navyLight, 
+                              color: colors.navyForeground 
+                            }}>
                               {format === "text" ? "Text" : "PDF"}
                             </Badge>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs" style={{ 
+                              borderColor: colors.navyLight, 
+                              color: colors.navyForeground 
+                            }}>
                               {readTime} min read
                             </Badge>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs" style={{ 
+                              borderColor: colors.navyLight, 
+                              color: colors.navyForeground 
+                            }}>
                               {totalPages} pages
                             </Badge>
                             {isBookCompleted && (
-                              <Badge className="bg-green-100 text-green-800 border-green-300 text-xs">
+                              <Badge className="text-xs" style={{ 
+                                backgroundColor: colors.success, 
+                                color: colors.successForeground,
+                                borderColor: colors.success 
+                              }}>
                                 Completed
                               </Badge>
                             )}
@@ -1158,7 +1259,7 @@ const BookReader = () => {
 
                     {bookmarks.length > 0 && (
                       <div className="mb-6">
-                        <h3 className="font-semibold mb-2 flex items-center gap-2">
+                        <h3 className="font-semibold mb-2 flex items-center gap-2" style={{ color: colors.navyForeground }}>
                           <BookMarked className="w-4 h-4" />
                           Bookmarks ({bookmarks.length})
                         </h3>
@@ -1172,12 +1273,13 @@ const BookReader = () => {
                                 goToBookmark(position);
                                 setShowTableOfContents(false);
                               }}
+                              style={{ color: colors.navyForeground, backgroundColor: 'transparent' }}
                             >
                               <div className="flex items-center gap-2 w-full">
-                                <Bookmark className="w-3 h-3 fill-current text-primary flex-shrink-0" />
+                                <Bookmark className="w-3 h-3 fill-current flex-shrink-0" style={{ color: colors.navyLight }} />
                                 <div className="flex-1 text-left">
                                   <div className="font-medium">Bookmark {index + 1}</div>
-                                  <div className="text-xs text-muted-foreground">
+                                  <div className="text-xs" style={{ color: `${colors.navyForeground}90` }}>
                                     Page {Math.ceil((position / 100) * totalPages)} • {position}%
                                   </div>
                                 </div>
@@ -1192,6 +1294,7 @@ const BookReader = () => {
                                     localStorage.setItem(`book_${id}_bookmarks`, JSON.stringify(newBookmarks));
                                     toast.success("Bookmark removed");
                                   }}
+                                  style={{ color: colors.navyForeground, backgroundColor: 'transparent' }}
                                 >
                                   <X className="w-3 h-3" />
                                 </Button>
@@ -1202,7 +1305,7 @@ const BookReader = () => {
                       </div>
                     )}
                     
-                    <h3 className="font-semibold mb-2">Page Navigation</h3>
+                    <h3 className="font-semibold mb-2" style={{ color: colors.navyForeground }}>Page Navigation</h3>
                     <div className="space-y-1">
                       {Array.from({ length: Math.min(10, totalPages) }).map((_, index) => {
                         const pageNumber = index + 1;
@@ -1215,16 +1318,20 @@ const BookReader = () => {
                               goToPage(pageNumber);
                               setShowTableOfContents(false);
                             }}
+                            style={{ color: colors.navyForeground, backgroundColor: 'transparent' }}
                           >
                             <div className="flex items-center justify-between w-full">
                               <span>Page {pageNumber}</span>
                               {pageNumber === currentPage && (
-                                <Badge variant="secondary" className="text-xs">
+                                <Badge variant="secondary" className="text-xs" style={{ 
+                                  backgroundColor: colors.navyLight, 
+                                  color: colors.navyForeground 
+                                }}>
                                   Current
                                 </Badge>
                               )}
                               {pageNumber === totalPages && isBookCompleted && (
-                                <CheckCircle className="w-3 h-3 text-green-500" />
+                                <CheckCircle className="w-3 h-3" style={{ color: colors.success }} />
                               )}
                             </div>
                           </Button>
@@ -1238,6 +1345,11 @@ const BookReader = () => {
                             max={totalPages}
                             placeholder="Page number"
                             className="flex-1 h-8"
+                            style={{ 
+                              backgroundColor: colors.navyDark, 
+                              borderColor: colors.navyLight, 
+                              color: colors.navyForeground 
+                            }}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
                                 const pageNum = parseInt((e.target as HTMLInputElement).value);
@@ -1261,6 +1373,11 @@ const BookReader = () => {
                                 }
                               }
                             }}
+                            style={{ 
+                              backgroundColor: colors.navyLight, 
+                              color: colors.navyForeground, 
+                              borderColor: colors.navyLight 
+                            }}
                           >
                             Go
                           </Button>
@@ -1280,9 +1397,15 @@ const BookReader = () => {
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Main Content */}
           <div className="flex-1">
-            <Card className={`border-2 shadow-lg overflow-hidden ${currentTheme.contentBg}`}>
+            <Card className="border-2 shadow-lg overflow-hidden" style={{ 
+              backgroundColor: colors.background, 
+              borderColor: colors.navyLight 
+            }}>
               {/* Book Stats Bar */}
-              <div className={`px-4 py-2 ${currentTheme.border} border-b flex items-center justify-between text-sm`}>
+              <div className="px-4 py-2 flex items-center justify-between text-sm" style={{ 
+                borderBottom: `1px solid ${colors.navyLight}`,
+                color: colors.navy 
+              }}>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1">
                     <FileText className="w-3.5 h-3.5" />
@@ -1305,12 +1428,20 @@ const BookReader = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   {purchaseInfo && (
-                    <Badge className="bg-green-100 text-green-800 border-green-300">
+                    <Badge style={{ 
+                      backgroundColor: colors.navyMuted, 
+                      color: colors.navy,
+                      borderColor: colors.navy 
+                    }}>
                       Purchased
                     </Badge>
                   )}
                   {isBookCompleted && (
-                    <Badge className="bg-green-500 text-white">
+                    <Badge style={{ 
+                      backgroundColor: colors.success, 
+                      color: colors.successForeground,
+                      borderColor: colors.success 
+                    }}>
                       <CheckCircle className="w-3 h-3 mr-1" />
                       Completed
                     </Badge>
@@ -1322,6 +1453,7 @@ const BookReader = () => {
               <div
                 ref={containerRef}
                 className="h-[calc(100vh-16rem)] sm:h-[calc(100vh-14rem)] overflow-y-auto scroll-smooth relative"
+                style={{ backgroundColor: colors.background }}
               >
                 <div className="p-4 sm:p-6 md:p-8">
                   <div
@@ -1335,6 +1467,7 @@ const BookReader = () => {
                       fontFamily: fontFamily,
                       columnCount: columnCount,
                       columnGap: "3rem",
+                      color: colors.foreground,
                     }}
                   >
                     {/* Content will be rendered here via renderContent() */}
@@ -1343,17 +1476,33 @@ const BookReader = () => {
                 
                 {/* End of book indicator */}
                 {hasReachedEnd && (
-                  <div className="text-center py-12">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-4">
-                      <CheckCircle className="w-8 h-8 text-green-600" />
+                  <div className="text-center py-12" style={{ backgroundColor: colors.navyMuted }}>
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4" style={{ backgroundColor: colors.navy }}>
+                      <CheckCircle className="w-8 h-8" style={{ color: colors.navyForeground }} />
                     </div>
-                    <h3 className="text-xl font-bold mb-2">Congratulations! 🎉</h3>
-                    <p className="text-muted-foreground mb-4">You've finished reading this book</p>
+                    <h3 className="text-xl font-bold mb-2" style={{ color: colors.navy }}>Congratulations! 🎉</h3>
+                    <p className="mb-4" style={{ color: colors.navy }}>You've finished reading this book</p>
                     <div className="flex gap-2 justify-center">
-                      <Button variant="outline" onClick={() => navigate(`/book/${id}`)}>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => navigate(`/book/${id}`)}
+                        style={{ 
+                          borderColor: colors.navy, 
+                          color: colors.navy, 
+                          backgroundColor: colors.navyMuted 
+                        }}
+                      >
                         View Book Details
                       </Button>
-                      <Button variant="outline" onClick={() => navigate('/library')}>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => navigate('/library')}
+                        style={{ 
+                          borderColor: colors.navy, 
+                          color: colors.navy, 
+                          backgroundColor: colors.navyMuted 
+                        }}
+                      >
                         Back to Library
                       </Button>
                     </div>
@@ -1362,7 +1511,7 @@ const BookReader = () => {
               </div>
 
               {/* Bottom Controls */}
-              <div className={`border-t ${currentTheme.border} p-4`}>
+              <div className="p-4" style={{ borderTop: `1px solid ${colors.navyLight}` }}>
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-2 flex-wrap">
                     <Button
@@ -1370,6 +1519,7 @@ const BookReader = () => {
                       size="sm"
                       onClick={shareBook}
                       className="gap-2"
+                      style={{ color: colors.navy, backgroundColor: 'transparent' }}
                     >
                       <Share2 className="w-4 h-4" />
                       <span className="hidden sm:inline">Share</span>
@@ -1382,6 +1532,11 @@ const BookReader = () => {
                         size="sm"
                         onClick={handleViewPDF}
                         className="gap-2"
+                        style={{ 
+                          borderColor: colors.navy, 
+                          color: colors.navy, 
+                          backgroundColor: colors.navyMuted 
+                        }}
                       >
                         <Eye className="w-4 h-4" />
                         <span className="hidden sm:inline">View PDF</span>
@@ -1394,6 +1549,11 @@ const BookReader = () => {
                         size="sm"
                         onClick={() => setViewMode(mode => mode === "clean" ? "original" : "clean")}
                         className="gap-2"
+                        style={{ 
+                          borderColor: colors.navy, 
+                          color: colors.navy, 
+                          backgroundColor: colors.navyMuted 
+                        }}
                       >
                         {viewMode === "clean" ? "Show Original" : "Clean View"}
                       </Button>
@@ -1408,13 +1568,14 @@ const BookReader = () => {
                       disabled={fontSize <= 12}
                       title="Decrease font size"
                       className="h-8 w-8"
+                      style={{ color: colors.navy, backgroundColor: 'transparent' }}
                     >
                       <ZoomOut className="w-3.5 h-3.5" />
                     </Button>
                     
                     <div className="flex flex-col items-center">
-                      <span className="text-sm font-medium">Aa</span>
-                      <span className="text-xs text-muted-foreground">{fontSize}px</span>
+                      <span className="text-sm font-medium" style={{ color: colors.navy }}>Aa</span>
+                      <span className="text-xs" style={{ color: colors.navy }}>{fontSize}px</span>
                     </div>
                     
                     <Button
@@ -1424,6 +1585,7 @@ const BookReader = () => {
                       disabled={fontSize >= 32}
                       title="Increase font size"
                       className="h-8 w-8"
+                      style={{ color: colors.navy, backgroundColor: 'transparent' }}
                     >
                       <ZoomIn className="w-3.5 h-3.5" />
                     </Button>
@@ -1441,23 +1603,25 @@ const BookReader = () => {
                       disabled={currentPage <= 1}
                       title="Previous page"
                       className="h-8 w-8"
+                      style={{ color: colors.navy, backgroundColor: 'transparent' }}
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </Button>
                     
                     <div className="flex flex-col items-center min-w-[80px]">
-                      <span className="text-sm font-bold">
+                      <span className="text-sm font-bold" style={{ color: colors.navy }}>
                         {currentPage}/{totalPages}
                       </span>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs" style={{ color: colors.navy }}>
                         Page {currentPage}
                       </span>
                       <Progress 
                         value={progressPercentage} 
-                        className={cn(
-                          "w-full mt-1 h-1",
-                          isBookCompleted && "bg-green-100"
-                        )} 
+                        className="w-full mt-1 h-1"
+                        style={{ 
+                          backgroundColor: colors.navyMuted,
+                          ['--progress-background' as any]: colors.navy 
+                        }}
                       />
                     </div>
                     
@@ -1474,6 +1638,7 @@ const BookReader = () => {
                       disabled={currentPage >= totalPages && hasReachedEnd}
                       title={currentPage === totalPages && !hasReachedEnd ? "Mark as completed" : "Next page"}
                       className="h-8 w-8"
+                      style={{ color: colors.navy, backgroundColor: 'transparent' }}
                     >
                       <ChevronRight className="w-4 h-4" />
                     </Button>
@@ -1485,9 +1650,12 @@ const BookReader = () => {
 
           {/* Sidebar - Only on large screens */}
           <div className="hidden lg:block w-80">
-            <Card className={`sticky top-24 border-2 ${currentTheme.contentBg}`}>
+            <Card className="sticky top-24 border-2" style={{ 
+              backgroundColor: colors.background, 
+              borderColor: colors.navyLight 
+            }}>
               <CardContent className="p-6">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <h3 className="font-semibold mb-4 flex items-center gap-2" style={{ color: colors.navy }}>
                   <BookOpen className="w-4 h-4" />
                   Reading Stats
                 </h3>
@@ -1495,44 +1663,54 @@ const BookReader = () => {
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-muted-foreground">Reading Progress</span>
-                      <span className="font-bold">{progressPercentage}%</span>
+                      <span style={{ color: colors.navy }}>Reading Progress</span>
+                      <span className="font-bold" style={{ color: colors.navy }}>{progressPercentage}%</span>
                     </div>
                     <Progress 
                       value={progressPercentage} 
-                      className={cn(
-                        "h-2",
-                        isBookCompleted && "bg-green-100"
-                      )} 
+                      className="h-2"
+                      style={{ 
+                        backgroundColor: colors.navyMuted,
+                        ['--progress-background' as any]: colors.navy 
+                      }}
                     />
-                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <div className="flex justify-between text-xs mt-1" style={{ color: colors.navy }}>
                       <span>Page {currentPage}</span>
                       <span>of {totalPages}</span>
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-secondary/20 rounded-lg">
+                    <div className="p-3 rounded-lg" style={{ 
+                      backgroundColor: colors.navyMuted, 
+                      border: `1px solid ${colors.navyLight}` 
+                    }}>
                       <div className="flex items-center gap-2 mb-1">
-                        <Clock className="w-3.5 h-3.5" />
-                        <span className="text-sm font-medium">Time Spent</span>
+                        <Clock className="w-3.5 h-3.5" style={{ color: colors.navy }} />
+                        <span className="text-sm font-medium" style={{ color: colors.navy }}>Time Spent</span>
                       </div>
-                      <p className="text-lg font-bold">{formatReadingTime(readingTime)}</p>
+                      <p className="text-lg font-bold" style={{ color: colors.navy }}>{formatReadingTime(readingTime)}</p>
                     </div>
                     
-                    <div className="p-3 bg-secondary/20 rounded-lg">
+                    <div className="p-3 rounded-lg" style={{ 
+                      backgroundColor: colors.navyMuted, 
+                      border: `1px solid ${colors.navyLight}` 
+                    }}>
                       <div className="flex items-center gap-2 mb-1">
-                        <Type className="w-3.5 h-3.5" />
-                        <span className="text-sm font-medium">Words</span>
+                        <Type className="w-3.5 h-3.5" style={{ color: colors.navy }} />
+                        <span className="text-sm font-medium" style={{ color: colors.navy }}>Words</span>
                       </div>
-                      <p className="text-lg font-bold">{wordCount.toLocaleString()}</p>
+                      <p className="text-lg font-bold" style={{ color: colors.navy }}>{wordCount.toLocaleString()}</p>
                     </div>
                   </div>
                   
-                  <div className="p-3 bg-secondary/20 rounded-lg">
+                  <div className="p-3 rounded-lg" style={{ 
+                    backgroundColor: colors.navyMuted, 
+                    border: `1px solid ${colors.navyLight}` 
+                  }}>
                     <div className="flex items-center gap-2 mb-2">
-                      <Bookmark className="w-3.5 h-3.5" />
-                      <span className="text-sm font-medium">Bookmarks</span>
+                      <Bookmark className="w-3.5 h-3.5" style={{ color: colors.navy }} />
+                      <span className="text-sm font-medium" style={{ color: colors.navy }}>Bookmarks</span>
                     </div>
                     {bookmarks.length > 0 ? (
                       <div className="space-y-1">
@@ -1543,28 +1721,29 @@ const BookReader = () => {
                             size="sm"
                             className="w-full justify-start text-xs h-7"
                             onClick={() => goToBookmark(position)}
+                            style={{ color: colors.navy, backgroundColor: 'transparent' }}
                           >
-                            <Bookmark className="w-3 h-3 mr-2 fill-current" />
+                            <Bookmark className="w-3 h-3 mr-2 fill-current" style={{ color: colors.navy }} />
                             Bookmark {index + 1} ({position}%)
                           </Button>
                         ))}
                         {bookmarks.length > 3 && (
-                          <p className="text-xs text-muted-foreground text-center">
+                          <p className="text-xs text-center" style={{ color: colors.navy }}>
                             +{bookmarks.length - 3} more
                           </p>
                         )}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground text-center py-2">
+                      <p className="text-sm text-center py-2" style={{ color: colors.navy }}>
                         No bookmarks yet
                       </p>
                     )}
                   </div>
                   
-                  <Separator />
+                  <Separator style={{ backgroundColor: colors.navyLight }} />
                   
                   <div>
-                    <h4 className="text-sm font-medium mb-2">Page Navigation</h4>
+                    <h4 className="text-sm font-medium mb-2" style={{ color: colors.navy }}>Page Navigation</h4>
                     <div className="flex items-center gap-2 mb-2">
                       <Input
                         type="number"
@@ -1584,29 +1763,75 @@ const BookReader = () => {
                             goToPage(currentPage);
                           }
                         }}
+                        style={{ 
+                          backgroundColor: colors.navyMuted, 
+                          borderColor: colors.navyLight, 
+                          color: colors.navy 
+                        }}
                       />
                       <Button 
                         size="sm" 
                         className="h-8"
                         onClick={() => goToPage(currentPage)}
+                        style={{ 
+                          backgroundColor: colors.navy, 
+                          color: colors.navyForeground, 
+                          borderColor: colors.navy 
+                        }}
                       >
                         Go
                       </Button>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <Button size="sm" onClick={() => setShowSearch(true)} className="gap-1">
+                      <Button 
+                        size="sm" 
+                        onClick={() => setShowSearch(true)} 
+                        className="gap-1"
+                        style={{ 
+                          backgroundColor: colors.navy, 
+                          color: colors.navyForeground, 
+                          borderColor: colors.navy 
+                        }}
+                      >
                         <Search className="w-3 h-3" />
                         Search
                       </Button>
-                      <Button size="sm" onClick={toggleBookmark} className="gap-1">
+                      <Button 
+                        size="sm" 
+                        onClick={toggleBookmark} 
+                        className="gap-1"
+                        style={{ 
+                          backgroundColor: colors.navy, 
+                          color: colors.navyForeground, 
+                          borderColor: colors.navy 
+                        }}
+                      >
                         <Bookmark className="w-3 h-3" />
                         Bookmark
                       </Button>
-                      <Button size="sm" onClick={toggleFullscreen} className="gap-1">
+                      <Button 
+                        size="sm" 
+                        onClick={toggleFullscreen} 
+                        className="gap-1"
+                        style={{ 
+                          backgroundColor: colors.navy, 
+                          color: colors.navyForeground, 
+                          borderColor: colors.navy 
+                        }}
+                      >
                         <Maximize2 className="w-3 h-3" />
                         Fullscreen
                       </Button>
-                      <Button size="sm" onClick={() => navigate(`/book/${id}`)} className="gap-1">
+                      <Button 
+                        size="sm" 
+                        onClick={() => navigate(`/book/${id}`)} 
+                        className="gap-1"
+                        style={{ 
+                          backgroundColor: colors.navy, 
+                          color: colors.navyForeground, 
+                          borderColor: colors.navy 
+                        }}
+                      >
                         <ArrowLeft className="w-3 h-3" />
                         Details
                       </Button>
@@ -1621,9 +1846,12 @@ const BookReader = () => {
 
       {/* Search Dialog */}
       <Dialog open={showSearch} onOpenChange={setShowSearch}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" style={{ 
+          backgroundColor: colors.navy, 
+          borderColor: colors.navyLight 
+        }}>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2" style={{ color: colors.navyForeground }}>
               <Search className="w-4 h-4" />
               Search in Book
             </DialogTitle>
@@ -1636,8 +1864,20 @@ const BookReader = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 className="flex-1"
+                style={{ 
+                  backgroundColor: colors.navyDark, 
+                  borderColor: colors.navyLight, 
+                  color: colors.navyForeground 
+                }}
               />
-              <Button onClick={handleSearch}>
+              <Button 
+                onClick={handleSearch}
+                style={{ 
+                  backgroundColor: colors.navyLight, 
+                  color: colors.navyForeground, 
+                  borderColor: colors.navyLight 
+                }}
+              >
                 Search
               </Button>
             </div>
@@ -1645,7 +1885,7 @@ const BookReader = () => {
             {searchResults.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">
+                  <span className="text-sm font-medium" style={{ color: colors.navyForeground }}>
                     {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} found
                   </span>
                   <div className="flex gap-1">
@@ -1655,6 +1895,11 @@ const BookReader = () => {
                       onClick={prevSearchResult}
                       disabled={searchResults.length <= 1}
                       className="h-7 px-2"
+                      style={{ 
+                        borderColor: colors.navyLight, 
+                        color: colors.navyForeground, 
+                        backgroundColor: 'transparent' 
+                      }}
                     >
                       <ChevronLeft className="w-3 h-3" />
                     </Button>
@@ -1664,21 +1909,29 @@ const BookReader = () => {
                       onClick={nextSearchResult}
                       disabled={searchResults.length <= 1}
                       className="h-7 px-2"
+                      style={{ 
+                        borderColor: colors.navyLight, 
+                        color: colors.navyForeground, 
+                        backgroundColor: 'transparent' 
+                      }}
                     >
                       <ChevronRight className="w-3 h-3" />
                     </Button>
                   </div>
                 </div>
                 <div className="text-sm">
-                  <span className="text-muted-foreground">Showing:</span>
-                  <span className="font-medium ml-1">
+                  <span style={{ color: `${colors.navyForeground}90` }}>Showing:</span>
+                  <span className="font-medium ml-1" style={{ color: colors.navyForeground }}>
                     {currentSearchIndex + 1} of {searchResults.length}
                   </span>
                 </div>
-                <Alert className="bg-primary/5">
-                  <AlertCircle className="w-4 h-4" />
-                  <AlertTitle className="text-sm">Tip</AlertTitle>
-                  <AlertDescription className="text-xs">
+                <Alert style={{ 
+                  backgroundColor: colors.navyDark, 
+                  borderColor: colors.navyLight 
+                }}>
+                  <AlertCircle className="w-4 h-4" style={{ color: `${colors.navyForeground}90` }} />
+                  <AlertTitle className="text-sm" style={{ color: colors.navyForeground }}>Tip</AlertTitle>
+                  <AlertDescription className="text-xs" style={{ color: `${colors.navyForeground}90` }}>
                     The search term will be highlighted for 3 seconds when you navigate to a result.
                   </AlertDescription>
                 </Alert>
@@ -1687,9 +1940,9 @@ const BookReader = () => {
             
             {searchQuery && searchResults.length === 0 && (
               <div className="text-center py-6">
-                <Search className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">
-                  No results found for "<span className="font-medium">{searchQuery}</span>"
+                <Search className="w-8 h-8 mx-auto mb-2" style={{ color: `${colors.navyForeground}90` }} />
+                <p className="text-sm" style={{ color: `${colors.navyForeground}90` }}>
+                  No results found for "<span className="font-medium" style={{ color: colors.navyForeground }}>{searchQuery}</span>"
                 </p>
               </div>
             )}
@@ -1704,6 +1957,7 @@ const BookReader = () => {
           size="icon"
           onClick={() => goToPage(1)}
           title="Go to first page"
+          style={{ backgroundColor: colors.navy, color: colors.navyForeground }}
         >
           <ChevronLeft className="w-5 h-5 rotate-180" />
         </Button>
@@ -1713,6 +1967,7 @@ const BookReader = () => {
           size="icon"
           onClick={toggleFullscreen}
           title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+          style={{ backgroundColor: colors.navy, color: colors.navyForeground }}
         >
           {isFullscreen ? (
             <Minimize2 className="w-5 h-5" />
@@ -1722,13 +1977,14 @@ const BookReader = () => {
         </Button>
         
         <Button
-          className={cn(
-            "rounded-full w-12 h-12 shadow-lg",
-            isBookCompleted ? "bg-green-500 hover:bg-green-600" : "bg-primary"
-          )}
+          className={cn("rounded-full w-12 h-12 shadow-lg")}
           size="icon"
           onClick={toggleBookmark}
           title={isBookCompleted ? "Book completed!" : "Add bookmark"}
+          style={{ 
+            backgroundColor: isBookCompleted ? colors.success : colors.navy, 
+            color: colors.navyForeground 
+          }}
         >
           {isBookCompleted ? (
             <CheckCircle className="w-5 h-5" />
@@ -1737,6 +1993,22 @@ const BookReader = () => {
           )}
         </Button>
       </div>
+
+      {/* CSS for progress bars */}
+      <style>
+        {`
+          [data-radix-progress-indicator] {
+            background-color: ${colors.navy} !important;
+          }
+          .dark [data-radix-progress-indicator] {
+            background-color: ${colors.navyLight} !important;
+          }
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}
+      </style>
     </div>
   );
 };

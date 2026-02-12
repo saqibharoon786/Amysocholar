@@ -1,7 +1,7 @@
 // components/DailyDeals.tsx
 import { Badge } from "./ui/badge";
 import { useEffect, useState } from "react";
-import { BookService, Book } from "@/services/bookService";
+import { BookService, Book } from "@/services/BookService";
 import { Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -39,12 +39,12 @@ const DailyDeals = () => {
   // Get current image for a book based on hover state
   const getCurrentImage = (book: Book) => {
     const images = book.coverImages || [];
-    
+
     // If book is hovered and has multiple images, show the second one
     if (hoveredBookId === book._id && images.length > 1) {
       return images[1];
     }
-    
+
     // Otherwise show the first image, or placeholder if none
     return images[0] || "/placeholder-book.png";
   };
@@ -52,11 +52,11 @@ const DailyDeals = () => {
   // Get image alt text
   const getImageAlt = (book: Book) => {
     const images = book.coverImages || [];
-    
+
     if (hoveredBookId === book._id && images.length > 1) {
       return `${book.title || "Book Cover"} - Alternate View`;
     }
-    
+
     return book.title || "Book Cover";
   };
 
@@ -86,8 +86,8 @@ const DailyDeals = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {deals.map((deal) => (
-            <div 
-              key={deal._id} 
+            <div
+              key={deal._id}
               className="group cursor-pointer bg-background rounded-xl border border-border overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
               onClick={() => navigate(`/book/${deal._id}`)}
               onMouseEnter={() => setHoveredBookId(deal._id)}
@@ -106,8 +106,8 @@ const DailyDeals = () => {
                 )}
 
                 {/* Cover image with hover effect - same logic as NewArrivals */}
-                <img 
-                  src={getCurrentImage(deal)} 
+                <img
+                  src={getCurrentImage(deal)}
                   alt={getImageAlt(deal)}
                   className="w-full aspect-[3/4] object-cover transition-all duration-500 group-hover:scale-105"
                   onError={(e) => handleImageError(e, deal)}
@@ -122,7 +122,7 @@ const DailyDeals = () => {
                   </div>
                 )}
               </div>
-              
+
               <div className="p-5 text-center space-y-3">
                 <p className="text-sm uppercase tracking-wide text-muted-foreground font-medium">
                   {deal.author || "Unknown Author"}
@@ -130,7 +130,7 @@ const DailyDeals = () => {
                 <h3 className="font-semibold text-foreground line-clamp-2 leading-tight min-h-[3.5rem] flex items-center justify-center">
                   {deal.title || "Untitled"}
                 </h3>
-                
+
                 <div className="flex items-center justify-center gap-2">
                   <span className="font-bold text-primary text-lg">
                     {deal.currency || "$"} {(deal.discountedPrice ?? deal.price ?? 0).toFixed(2)}

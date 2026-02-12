@@ -66,7 +66,11 @@ const LatestNews = () => {
               <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
                 {post.excerpt}
               </p>
-              <Button variant="default" size="sm">
+              <Button 
+                variant="default" 
+                size="sm"
+                className="bg-blue-900 hover:bg-blue-800 text-white"
+              >
                 Read More
               </Button>
             </article>

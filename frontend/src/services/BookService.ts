@@ -1,7 +1,7 @@
 // services/bookService.ts
 import api from './api';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? '';
 
 export const constructImageUrl = (imagePath: string | null | undefined): string => {
   if (!imagePath) return '/placeholder-book.png';
@@ -274,6 +274,7 @@ export const BookService = {
 
   // ================== 👩‍💼 ADMIN ROUTES ==================
   uploadBook: async (formData: FormData): Promise<ApiResponse<{ book: Book }>> => {
+    console.log("Uploading book with formData:", formData); 
     const response = await api.post<ApiResponse<{ book: Book }>>('/book/upload-book', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
@@ -332,30 +333,13 @@ updateBook: async (id: string): Promise<ApiResponse> => {
   },
 
   // ================== 👤 CUSTOMER ROUTES ==================
-// In BookService.ts, update the purchaseBook function:
-purchaseBook: async (id: string, data: PurchaseBookData): Promise<ApiResponse<{ 
-  purchase?: any; 
-  paymentUrl?: string; 
-  tracker?: string;
-  nextStep?: string;
-  redirectUrl?: string;
-  paymentId?: string;
-  transactionRef?: string;
-}>> => {
-  const response = await api.post<ApiResponse<{ 
-    purchase?: any; 
-    paymentUrl?: string; 
-    tracker?: string;
-    nextStep?: string;
-    redirectUrl?: string;
-    paymentId?: string;
-    transactionRef?: string;
-  }>>(`/payments/create`, {
-    bookId: id,  // Send bookId in the body
-    paymentMethod: data.paymentMethod
-  });
-  return response.data;
-},
+  purchaseBook: async (id: string, _data?: PurchaseBookData): Promise<ApiResponse<{ paymentUrl?: string; redirectUrl?: string; payment?: { paymentUrl: string } }>> => {
+    const res = await api.post<ApiResponse<{ paymentUrl?: string; redirectUrl?: string; payment?: { paymentUrl: string } }>>('/payments/create', {
+      bookId: id,
+      paymentMethod: 'safepay'
+    });
+    return res.data;
+  },
 
   getMyPurchasedBooks: async (page: number = 1, limit: number = 10): Promise<ApiResponse<{ purchases: any[] }>> => {
     const response = await api.get<ApiResponse<{ purchases: any[] }>>('/book/my/purchases', {
@@ -364,28 +348,19 @@ purchaseBook: async (id: string, data: PurchaseBookData): Promise<ApiResponse<{
     return response.data;
   },
 
-readFullBook: async (id: string, format: 'pdf' | 'text' = 'text'): Promise<ApiResponse<{
-  book: Book;
-  filePath?: string; // Make optional
-  textContent?: string; // Add this
-  textFormat?: string; // Add this
-  textLanguage?: string; // Add this
-  format: string;
-  isFree: boolean;
-  totalPages: number;
-  wordCount?: number; // Add this
-  estimatedReadingTime?: number; // Add this
-}>> => {
-  const response = await api.get<ApiResponse>(`/book/${id}/read`, { 
-    params: { format },
-    timeout: 30000 
-  });
-  
-  if (response.data.success && response.data.data?.book) {
-    response.data.data.book = processBookData(response.data.data.book);
-  }
-  return response.data;
-},
+  readFullBook: async (id: string, format: 'pdf' | 'text' = 'text'): Promise<ApiResponse<{
+    book: Book;
+    filePath: string;
+    format: string;
+    isFree: boolean;
+    totalPages: number;
+  }>> => {
+    const response = await api.get<ApiResponse>(`/book/${id}/read`, { params: { format } });
+    if (response.data.success && response.data.data?.book) {
+      response.data.data.book = processBookData(response.data.data.book);
+    }
+    return response.data;
+  },
 
   checkPurchaseStatus: async (id: string): Promise<ApiResponse<{ hasPurchased: boolean; purchase: any }>> => {
     const response = await api.get<ApiResponse<{ hasPurchased: boolean; purchase: any }>>(`/book/${id}/check-purchase`);

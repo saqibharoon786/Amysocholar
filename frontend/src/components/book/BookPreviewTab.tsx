@@ -59,23 +59,23 @@ const BookPreviewTab = ({
   };
 
   return (
-    <Card className="border-2">
+    <Card className="border-2 border-blue-200/50">
       <CardContent className="p-6">
         <div className="space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h3 className="text-xl font-bold mb-1">Book Preview</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="text-xl font-bold mb-1 text-blue-900">Book Preview</h3>
+              <p className="text-sm text-blue-700">
                 Read the full text content uploaded by the publisher
               </p>
             </div>
             {bookPreview && (
               <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/30 rounded-full">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-100/50 rounded-full text-blue-700">
                   <FileText className="w-4 h-4" />
                   <span>{bookPreview.wordCount?.toLocaleString() || 0} words</span>
                 </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/30 rounded-full">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-100/50 rounded-full text-blue-700">
                   <Clock className="w-4 h-4" />
                   <span>{bookPreview.estimatedReadingTime || 0} min read</span>
                 </div>
@@ -84,18 +84,18 @@ const BookPreviewTab = ({
           </div>
           
           {/* Text Content Display */}
-          <div className="bg-gradient-to-br from-card to-secondary/10 border-2 rounded-xl overflow-hidden">
-            <div className="border-b p-4 bg-gradient-to-r from-primary/5 to-secondary/5">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100/30 border-2 border-blue-200/50 rounded-xl overflow-hidden">
+            <div className="border-b border-blue-200 p-4 bg-gradient-to-r from-blue-50 to-blue-100/30">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Badge className="bg-primary/10 text-primary border-primary/20 gap-1">
+                  <Badge className="bg-blue-100 text-blue-700 border-blue-300 gap-1">
                     <BookOpen className="w-3 h-3" />
                     Full Text
                   </Badge>
-                  <Badge variant="secondary" className="capitalize">
+                  <Badge variant="secondary" className="capitalize bg-blue-50 text-blue-700 border-blue-200">
                     {book.textFormat || 'plain'} format
                   </Badge>
-                  <Badge variant="secondary" className="capitalize">
+                  <Badge variant="secondary" className="capitalize bg-blue-50 text-blue-700 border-blue-200">
                     {book.textLanguage || 'English'}
                   </Badge>
                 </div>
@@ -103,7 +103,7 @@ const BookPreviewTab = ({
                   variant="default"
                   size="sm" 
                   onClick={onReadTextBook}
-                  className="gap-2"
+                  className="gap-2 bg-blue-600 hover:bg-blue-700 text-white border-0"
                 >
                   <Eye className="w-4 h-4" />
                   Read Full Screen
@@ -119,12 +119,12 @@ const BookPreviewTab = ({
           
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="border-2 hover:border-primary/50 transition-colors">
+            <Card className="border-2 border-blue-200/50 hover:border-blue-400 transition-colors">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">Want to read offline?</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-medium text-blue-900">Want to read offline?</p>
+                    <p className="text-sm text-blue-700">
                       Purchase the PDF version
                     </p>
                   </div>
@@ -133,7 +133,7 @@ const BookPreviewTab = ({
                     size="sm"
                     onClick={onPurchase}
                     disabled={purchasing}
-                    className="gap-2"
+                    className="gap-2 bg-blue-600 hover:bg-blue-700 text-white border-0"
                   >
                     {purchasing ? (
                       <>
@@ -151,12 +151,12 @@ const BookPreviewTab = ({
               </CardContent>
             </Card>
             
-            <Card className="border-2 hover:border-primary/50 transition-colors">
+            <Card className="border-2 border-blue-200/50 hover:border-blue-400 transition-colors">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">Better reading experience</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-medium text-blue-900">Better reading experience</p>
+                    <p className="text-sm text-blue-700">
                       Use the reader view for comfort
                     </p>
                   </div>
@@ -168,7 +168,7 @@ const BookPreviewTab = ({
                         onReadTextBook();
                       }
                     }}
-                    className="gap-2"
+                    className="gap-2 bg-blue-600 hover:bg-blue-700 text-white border-0"
                   >
                     <Eye className="w-4 h-4" />
                     Reader View

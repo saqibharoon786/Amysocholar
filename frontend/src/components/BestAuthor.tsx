@@ -1,7 +1,7 @@
 import { Facebook, Instagram } from "lucide-react";
 import { FaTwitter } from "react-icons/fa";
 import { useState, useEffect } from "react";
-// import { BookService, Author, Book } from "@/services/bookService";
+import { BookService, Author, Book } from "@/services/BookService";
 import { Loader2 } from "lucide-react";
 
 const BestAuthor = () => {
@@ -9,30 +9,30 @@ const BestAuthor = () => {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // useEffect(() => {
-  //   fetchAuthorData();
-  // }, []);
+  useEffect(() => {
+    fetchAuthorData();
+  }, []);
 
-  // const fetchAuthorData = async () => {
-  //   try {
-  //     setLoading(true);
-  //     // Fetch featured author
-  //     const authorResponse = await BookService.getFeaturedAuthor();
-  //     if (authorResponse.success && authorResponse.data) {
-  //       setAuthor(authorResponse.data);
+  const fetchAuthorData = async () => {
+    try {
+      setLoading(true);
+      // Fetch featured author
+      const authorResponse = await BookService.getFeaturedAuthor();
+      if (authorResponse.success && authorResponse.data) {
+        setAuthor(authorResponse.data);
         
-  //       // Fetch author's books
-  //       const booksResponse = await BookService.getBooksByAuthor(authorResponse.data._id, 2);
-  //       if (booksResponse.success && booksResponse.data?.books) {
-  //         setBooks(booksResponse.data.books);
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error('Error fetching author data:', error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+        // Fetch author's books
+        const booksResponse = await BookService.getBooksByAuthor(authorResponse.data._id, 2);
+        if (booksResponse.success && booksResponse.data?.books) {
+          setBooks(booksResponse.data.books);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching author data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.src = "/placeholder-author.jpg";

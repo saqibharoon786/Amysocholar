@@ -18,6 +18,10 @@ export interface Judgment {
   price: number;
   currency: string;
   pdfFile?: string;
+  // New: full text stored directly in the judgment
+  textContent?: string;
+  textFormat?: string; // 'plain' | 'html' | 'markdown'
+  // Backwards-compat: optional legacy text file path
   textFile?: string;
   uploader: any;
   viewCount: number;
@@ -88,43 +92,43 @@ export interface ApiResponse<T = any> {
 export const JudgmentService = {
   // ================== ⚖️ PUBLIC ROUTES ==================
   getAllJudgments: async (filters: JudgmentFilters = {}): Promise<ApiResponse<{ judgments: Judgment[] }>> => {
-    const response = await api.get<ApiResponse<{ judgments: Judgment[] }>>('/judgment/get-all-judgment', { params: filters });
+    const response = await api.get<ApiResponse<{ judgments: Judgment[] }>>('/judgments/get-all-judgment', { params: filters });
     return response.data;
   },
 
   getJudgmentById: async (id: string): Promise<ApiResponse<{ judgment: Judgment }>> => {
-    const response = await api.get<ApiResponse<{ judgment: Judgment }>>(`/judgment/${id}`);
+    const response = await api.get<ApiResponse<{ judgment: Judgment }>>(`/judgments/${id}`);
     return response.data;
   },
 
   getFeaturedJudgments: async (): Promise<ApiResponse<{ judgments: Judgment[] }>> => {
-    const response = await api.get<ApiResponse<{ judgments: Judgment[] }>>('/judgment/featured');
+    const response = await api.get<ApiResponse<{ judgments: Judgment[] }>>('/judgments/featured');
     return response.data;
   },
 
   searchJudgments: async (q: string, court?: string, category?: string, yearFrom?: number, yearTo?: number, page: number = 1, limit: number = 10): Promise<ApiResponse<{ judgments: Judgment[] }>> => {
-    const response = await api.get<ApiResponse<{ judgments: Judgment[] }>>('/judgment/search', {
+    const response = await api.get<ApiResponse<{ judgments: Judgment[] }>>('/judgments/search', {
       params: { q, court, category, yearFrom, yearTo, page, limit }
     });
     return response.data;
   },
 
   getJudgmentsByCourt: async (court: string, page: number = 1, limit: number = 10): Promise<ApiResponse<{ judgments: Judgment[] }>> => {
-    const response = await api.get<ApiResponse<{ judgments: Judgment[] }>>(`/judgment/court/${court}`, {
+    const response = await api.get<ApiResponse<{ judgments: Judgment[] }>>(`/judgments/court/${court}`, {
       params: { page, limit }
     });
     return response.data;
   },
 
   getJudgmentsByYear: async (year: number, page: number = 1, limit: number = 10): Promise<ApiResponse<{ judgments: Judgment[] }>> => {
-    const response = await api.get<ApiResponse<{ judgments: Judgment[] }>>(`/judgment/year/${year}`, {
+    const response = await api.get<ApiResponse<{ judgments: Judgment[] }>>(`/judgments/year/${year}`, {
       params: { page, limit }
     });
     return response.data;
   },
 
   getJudgmentsByCategory: async (category: string, page: number = 1, limit: number = 10): Promise<ApiResponse<{ judgments: Judgment[] }>> => {
-    const response = await api.get<ApiResponse<{ judgments: Judgment[] }>>(`/judgment/category/${category}`, {
+    const response = await api.get<ApiResponse<{ judgments: Judgment[] }>>(`/judgments/category/${category}`, {
       params: { page, limit }
     });
     return response.data;
@@ -132,27 +136,27 @@ export const JudgmentService = {
 
   // ================== 🧑‍⚖️ SUPERADMIN ROUTES ==================
   uploadJudgment: async (formData: FormData): Promise<ApiResponse<{ judgment: Judgment }>> => {
-    const response = await api.post<ApiResponse<{ judgment: Judgment }>>('/judgment/upload-judgment-book', formData, {
+    const response = await api.post<ApiResponse<{ judgment: Judgment }>>('/judgments/upload-judgment-book', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;
   },
 
   updateJudgment: async (id: string, formData: FormData): Promise<ApiResponse<{ judgment: Judgment }>> => {
-    const response = await api.patch<ApiResponse<{ judgment: Judgment }>>(`/judgment/${id}`, formData, {
+    const response = await api.patch<ApiResponse<{ judgment: Judgment }>>(`/judgments/${id}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;
   },
 
   deleteJudgment: async (id: string): Promise<ApiResponse> => {
-    const response = await api.delete<ApiResponse>(`/judgment/${id}`);
+    const response = await api.delete<ApiResponse>(`/judgments/${id}`);
     return response.data;
   },
 
   // ================== 👤 CUSTOMER ROUTES ==================
-  purchaseJudgment: async (id: string): Promise<ApiResponse<{ purchase: any }>> => {
-    const response = await api.post<ApiResponse<{ purchase: any }>>(`/judgment/${id}/purchase`, { paymentMethod: 'safepay' });
+  purchaseJudgment: async (id: string, paymentMethod: string = 'bank'): Promise<ApiResponse<{ purchase: any }>> => {
+    const response = await api.post<ApiResponse<{ purchase: any }>>(`/judgments/${id}/purchase`, { paymentMethod });
     return response.data;
   },
 
@@ -162,12 +166,12 @@ export const JudgmentService = {
     format: string;
     isFree: boolean;
   }>> => {
-    const response = await api.get<ApiResponse>(`/judgment/${id}/read`);
+    const response = await api.get<ApiResponse>(`/judgments/${id}/read`);
     return response.data;
   },
 
   getMyPurchasedJudgments: async (): Promise<ApiResponse<{ purchases: any[] }>> => {
-    const response = await api.get<ApiResponse<{ purchases: any[] }>>('/judgment/my-purchases/judgments');
+    const response = await api.get<ApiResponse<{ purchases: any[] }>>('/judgments/my-purchases/judgments');
     return response.data;
   }
 };
