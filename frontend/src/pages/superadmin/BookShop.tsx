@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Eye, CheckCircle, XCircle, Filter, Search, Download, User, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { BookService, Book } from "@/services/BookService";
+import { BookService, Book, constructImageUrl } from "@/services/BookService";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Dialog,
@@ -28,6 +28,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+// Get first cover image URL (supports coverImages array or legacy coverImage)
+const getBookCoverUrl = (book: Book): string | null => {
+  const first = book.coverImages?.[0] ?? (book as any).coverImage;
+  return first && String(first).trim() ? first : null;
+};
 
 const BookShop = () => {
   const { toast } = useToast();
@@ -520,19 +526,15 @@ const BookShop = () => {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-16 bg-white/10 rounded flex items-center justify-center overflow-hidden border border-blue-500/30">
-                            {book.coverImages?.[0] ? (
-                              <img
-                                src={book.coverImages[0]}
-                                alt={book.title || "Book cover"}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.currentTarget.src = "/placeholder-book.png";
-                                  e.currentTarget.alt = "Placeholder book cover";
-                                }}
-                              />
-                            ) : (
-                              <BookOpen className="h-6 w-6 text-blue-400" />
-                            )}
+                            <img
+                              src={constructImageUrl(getBookCoverUrl(book))}
+                              alt={book.title || "Book cover"}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = "/placeholder-book.png";
+                                e.currentTarget.alt = "Placeholder book cover";
+                              }}
+                            />
                           </div>
                           <div>
                             <p className="font-medium text-white line-clamp-1">{book.title}</p>
@@ -712,19 +714,15 @@ const BookShop = () => {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-16 bg-white/10 rounded flex items-center justify-center overflow-hidden border border-blue-500/30">
-                            {book.coverImages?.[0] ? (
-                              <img
-                                src={book.coverImages[0]}
-                                alt={book.title || "Book cover"}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.currentTarget.src = "/placeholder-book.png";
-                                  e.currentTarget.alt = "Placeholder book cover";
-                                }}
-                              />
-                            ) : (
-                              <BookOpen className="h-6 w-6 text-blue-400" />
-                            )}
+                            <img
+                              src={constructImageUrl(getBookCoverUrl(book))}
+                              alt={book.title || "Book cover"}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = "/placeholder-book.png";
+                                e.currentTarget.alt = "Placeholder book cover";
+                              }}
+                            />
                           </div>
                           <div>
                             <p className="font-medium text-white line-clamp-1">{book.title}</p>

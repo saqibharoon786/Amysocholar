@@ -1023,21 +1023,6 @@ const UploadJudgmentForm = ({
               </CardContent>
             </Card>
 
-            {/* Add New Judgment Button at Bottom */}
-            <div className="flex justify-center pt-4">
-              <Button
-                onClick={() => setShowForm(true)}
-                className="h-11 px-8 rounded-lg shadow-sm hover:shadow-md transition-all duration-300"
-                style={{
-                  backgroundColor: '#2d3748',
-                  color: '#f1f5f9',
-                  border: '1px solid rgba(100, 116, 139, 0.3)'
-                }}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add New Judgment
-              </Button>
-            </div>
           </div>
         </div>
 

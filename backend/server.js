@@ -79,7 +79,12 @@ InitializeSuperAdmin();
 })();
 
 // ===== Security Middleware =====
-app.use(helmet());
+// Allow cross-origin loading of uploads (images, etc.) so frontend on different port can display them
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 
 // ===== CORS =====
 // Allow frontend origin: use FRONTEND_URL, and in development also allow common dev ports (8080, 3000, 5173)
