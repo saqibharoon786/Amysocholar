@@ -1,12 +1,43 @@
-import { User, LogOut, BookOpen, Menu } from "lucide-react";
+import { User, LogOut, BookOpen, Menu, ChevronDown } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+
+const BOOK_CATEGORIES = [
+  "Constitutional Law",
+  "Criminal Law",
+  "Contract Law",
+  "Family Law",
+  "Property Law",
+  "Corporate Law",
+  "Tax Law",
+  "Labor Law",
+];
+
+const JUDGMENT_CATEGORIES = [
+  { id: "Civil", name: "Civil Cases" },
+  { id: "Criminal", name: "Criminal Cases" },
+  { id: "Constitutional", name: "Constitutional" },
+  { id: "Family", name: "Family Cases" },
+  { id: "Commercial", name: "Commercial" },
+  { id: "Labor", name: "Labor" },
+  { id: "Administrative", name: "Administrative" },
+];
 
 const Header = () => {
   const { user, isAuthenticated, signout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleAuthClick = () => {
@@ -26,10 +57,19 @@ const Header = () => {
     }
   };
 
+  const handleHomeClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (location.pathname === "/") {
+      document.getElementById("hero")?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      navigate("/");
+      setTimeout(() => document.getElementById("hero")?.scrollIntoView({ behavior: "smooth" }), 100);
+    }
+  };
+
   const navItems = [
-    { label: "Home", path: "/" },
-    { label: "Categories", path: "/categories" },
-    { label: "Judgments", path: "/judgments" },
+    { label: "Home", path: "/", isHome: true },
+    { label: "Judgments", path: "/#judgments" },
     { label: "Authors", path: "/authors" },
     { label: "Best Sellers", path: "/bestsellers" },
     { label: "New Releases", path: "/new-releases" },
@@ -37,50 +77,136 @@ const Header = () => {
 
   return (
     <>
-      {/* Single Line Header - Professional Bookstore Theme */}
       <header className="fixed top-0 w-full bg-gradient-to-r from-slate-900 via-navy-900 to-slate-900 border-b border-slate-800/80 shadow-xl z-50 py-4">
-        <div className="container mx-auto px-4 flex items-center justify-between">
-
-          {/* Left: Logo */}
-          <div
-            className="cursor-pointer flex items-center gap-3 group"
-            onClick={() => navigate("/")}
-          >
-            <div className="relative">
-              <div className="absolute inset-0 bg-blue-500/20 blur-md rounded-full"></div>
-              <BookOpen className="h-8 w-8 text-white relative z-10 group-hover:text-blue-300 transition-colors duration-300" />
+        <div className="container mx-auto px-4 grid grid-cols-[minmax(0,auto)_1fr_minmax(0,auto)] items-center gap-6 lg:gap-10 min-h-0">
+          {/* Logo + name: left side only, separate from center bar */}
+          <div className="flex items-center justify-start min-w-0 pr-2">
+            <div
+              className="cursor-pointer flex items-center gap-4 group flex-shrink-0"
+              onClick={() => navigate("/")}
+            >
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 border-2 border-slate-600/50 bg-slate-800/50 shadow-lg flex-none">
+              <img
+                src="/logo.png"
+                alt="AMY ScholarNest"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                  const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                  if (fallback) fallback.style.display = "flex";
+                }}
+              />
+              <div
+                className="absolute inset-0 hidden items-center justify-center bg-slate-800 text-amber-400"
+                style={{ display: "none" }}
+              >
+                <BookOpen className="w-10 h-10" />
+              </div>
             </div>
             <div className="flex flex-col">
-              <h1 className="text-xl font-bold tracking-tight text-white font-sans">
-                AMYSCHOLAR
-                <span className="text-blue-400 ml-1 font-black">Net</span>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-sans leading-tight">
+                AMY <span className="text-amber-400">Scholar</span>
+                <span className="text-blue-400 font-black">Nest</span>
               </h1>
-              <div className="text-[10px] text-blue-300/70 font-medium tracking-wider uppercase mt-[-2px]">
+              <div className="text-xs sm:text-sm text-blue-300/70 font-medium tracking-wider uppercase mt-0.5">
                 Legal Publications & Resources
               </div>
             </div>
           </div>
+          </div>
 
-          {/* Center: Navigation - Desktop */}
-          <nav className="hidden lg:block absolute left-1/2 transform -translate-x-1/2">
-            <ul className="flex items-center gap-1 bg-slate-800/50 backdrop-blur-sm px-3 py-2 rounded-2xl border border-slate-700/50">
+          {/* Center: Navigation bar (separate from logo) */}
+          <nav className="hidden lg:flex justify-center items-center min-w-0">
+            <ul className="flex items-center gap-1 bg-slate-800/50 backdrop-blur-sm px-3 py-2 rounded-2xl border border-slate-700/50 shadow-inner">
               {navItems.map((item) => (
                 <li key={item.path}>
-                  <a
-                    href={item.path}
-                    className="text-sm text-white/80 hover:text-white hover:bg-slate-700/50 px-4 py-2 rounded-xl transition-all duration-300 font-medium relative group"
-                  >
-                    {item.label}
-                    <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-blue-400 group-hover:w-3/4 transition-all duration-300"></span>
-                  </a>
+                  {item.isHome ? (
+                    <a
+                      href="/"
+                      onClick={handleHomeClick}
+                      className="text-sm text-white/80 hover:text-white hover:bg-slate-700/50 px-4 py-2 rounded-xl transition-all duration-300 font-medium relative group block"
+                    >
+                      {item.label}
+                      <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-blue-400 group-hover:w-3/4 transition-all duration-300"></span>
+                    </a>
+                  ) : (
+                    <a
+                      href={item.path}
+                      onClick={(e) => {
+                        if (item.path.startsWith("/#")) {
+                          e.preventDefault();
+                          navigate("/");
+                          setTimeout(() => document.getElementById(item.path.slice(2))?.scrollIntoView({ behavior: "smooth" }), 100);
+                        }
+                      }}
+                      className="text-sm text-white/80 hover:text-white hover:bg-slate-700/50 px-4 py-2 rounded-xl transition-all duration-300 font-medium relative group block"
+                    >
+                      {item.label}
+                      <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-blue-400 group-hover:w-3/4 transition-all duration-300"></span>
+                    </a>
+                  )}
                 </li>
               ))}
+              {/* Categories dropdown: Book + Judgment sub-menus */}
+              <li>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="text-sm text-white/80 hover:text-white hover:bg-slate-700/50 px-4 py-2 rounded-xl transition-all duration-300 font-medium inline-flex items-center gap-1 outline-none">
+                      Categories
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" className="w-56 bg-slate-900 border-slate-700 text-white">
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="text-white/90 focus:bg-slate-700 focus:text-white data-[state=open]:bg-slate-700">
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        Book
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent className="bg-slate-900 border-slate-700">
+                        {BOOK_CATEGORIES.map((cat) => (
+                          <DropdownMenuItem
+                            key={cat}
+                            className="text-white/90 focus:bg-slate-700 focus:text-white cursor-pointer"
+                            onClick={() => navigate(`/catalog?category=${encodeURIComponent(cat)}`)}
+                          >
+                            {cat}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="text-white/90 focus:bg-slate-700 focus:text-white data-[state=open]:bg-slate-700">
+                        <span className="mr-2 text-amber-400 font-semibold">⚖</span>
+                        Judgment
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent className="bg-slate-900 border-slate-700">
+                        {JUDGMENT_CATEGORIES.map((cat) => (
+                          <DropdownMenuItem
+                            key={cat.id}
+                            className="text-white/90 focus:bg-slate-700 focus:text-white cursor-pointer"
+                            onClick={() => {
+                              navigate("/");
+                              setTimeout(() => {
+                                const el = document.getElementById("judgments");
+                                el?.scrollIntoView({ behavior: "smooth" });
+                                const event = new CustomEvent("judgment-filter", { detail: cat.id });
+                                window.dispatchEvent(event);
+                              }, 150);
+                            }}
+                          >
+                            {cat.name}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </li>
             </ul>
           </nav>
 
           {/* Right: User Actions */}
-          <div className="flex items-center gap-3">
-            {/* User Profile */}
+          <div className="flex items-center justify-end gap-3 flex-shrink-0">
             <div className="relative">
               <Button
                 variant="ghost"
@@ -97,8 +223,6 @@ const Header = () => {
                 </div>
               </Button>
             </div>
-
-            {/* Auth Button */}
             {isAuthenticated ? (
               <Button
                 variant="ghost"
@@ -120,8 +244,6 @@ const Header = () => {
                 <span>Sign In</span>
               </Button>
             )}
-
-            {/* Mobile Menu Toggle */}
             <Button
               variant="ghost"
               size="icon"
@@ -133,55 +255,70 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Mobile Navigation Menu */}
+        {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="lg:hidden bg-gradient-to-b from-slate-900/95 to-navy-900/95 backdrop-blur-lg border-t border-slate-800/80 mt-4 py-6">
             <div className="container mx-auto px-4">
               <div className="flex flex-col gap-4">
-                {/* Navigation Items */}
-                <div className="grid grid-cols-2 gap-2">
-                  {navItems.map((item) => (
+                <a href="/" onClick={(e) => { handleHomeClick(e); setIsMenuOpen(false); }} className="text-white/80 hover:text-white hover:bg-slate-800/50 rounded-xl px-4 py-3 transition-all duration-300 text-sm font-medium border border-slate-700/30">
+                  Home
+                </a>
+                <div className="text-white/80 text-sm font-medium px-4 py-2">Categories</div>
+                <div className="pl-6 space-y-1">
+                  <div className="text-blue-300/90 text-xs font-semibold mb-2">Book</div>
+                  {BOOK_CATEGORIES.map((cat) => (
                     <a
-                      key={item.path}
-                      href={item.path}
-                      className="text-white/80 hover:text-white hover:bg-slate-800/50 rounded-xl px-4 py-3 transition-all duration-300 text-sm font-medium border border-slate-700/30"
+                      key={cat}
+                      href={`/catalog?category=${encodeURIComponent(cat)}`}
                       onClick={() => setIsMenuOpen(false)}
+                      className="block text-white/70 hover:text-white hover:bg-slate-800/50 rounded-lg px-4 py-2 text-sm"
                     >
-                      {item.label}
+                      {cat}
                     </a>
                   ))}
+                  <div className="text-amber-400/90 text-xs font-semibold mt-4 mb-2">Judgment</div>
+                  {JUDGMENT_CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        navigate("/");
+                        setTimeout(() => {
+                          document.getElementById("judgments")?.scrollIntoView({ behavior: "smooth" });
+                          window.dispatchEvent(new CustomEvent("judgment-filter", { detail: cat.id }));
+                        }, 150);
+                      }}
+                      className="block w-full text-left text-white/70 hover:text-white hover:bg-slate-800/50 rounded-lg px-4 py-2 text-sm"
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
                 </div>
-
-                {/* Auth Buttons - Mobile */}
+                <a href="/#judgments" onClick={() => { setIsMenuOpen(false); navigate("/"); setTimeout(() => document.getElementById("judgments")?.scrollIntoView({ behavior: "smooth" }), 100); }} className="text-white/80 hover:text-white hover:bg-slate-800/50 rounded-xl px-4 py-3 transition-all duration-300 text-sm font-medium border border-slate-700/30">
+                  Judgments
+                </a>
+                <a href="/authors" onClick={() => setIsMenuOpen(false)} className="text-white/80 hover:text-white hover:bg-slate-800/50 rounded-xl px-4 py-3 transition-all duration-300 text-sm font-medium border border-slate-700/30">
+                  Authors
+                </a>
+                <a href="/bestsellers" onClick={() => setIsMenuOpen(false)} className="text-white/80 hover:text-white hover:bg-slate-800/50 rounded-xl px-4 py-3 transition-all duration-300 text-sm font-medium border border-slate-700/30">
+                  Best Sellers
+                </a>
+                <a href="/new-releases" onClick={() => setIsMenuOpen(false)} className="text-white/80 hover:text-white hover:bg-slate-800/50 rounded-xl px-4 py-3 transition-all duration-300 text-sm font-medium border border-slate-700/30">
+                  New Releases
+                </a>
                 <div className="pt-4 border-t border-slate-800/80 flex flex-col gap-3">
                   {isAuthenticated ? (
                     <>
                       <div className="text-center text-white/60 text-sm">
                         Logged in as <span className="text-blue-300">{user?.email}</span>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          handleAuthClick();
-                          setIsMenuOpen(false);
-                        }}
-                        className="w-full rounded-xl text-white hover:bg-slate-800/50 border border-slate-700/50"
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => { handleAuthClick(); setIsMenuOpen(false); }} className="w-full rounded-xl text-white hover:bg-slate-800/50 border border-slate-700/50">
                         <LogOut className="h-4 w-4 mr-2" />
                         Sign Out
                       </Button>
                     </>
                   ) : (
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => {
-                        handleAuthClick();
-                        setIsMenuOpen(false);
-                      }}
-                      className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg shadow-blue-500/20"
-                    >
+                    <Button variant="default" size="sm" onClick={() => { handleAuthClick(); setIsMenuOpen(false); }} className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white">
                       <User className="h-4 w-4 mr-2" />
                       Sign In / Register
                     </Button>
@@ -192,9 +329,7 @@ const Header = () => {
           </div>
         )}
       </header>
-
-      {/* Spacer for fixed header */}
-      <div className="h-20"></div>
+      <div className="h-20" />
     </>
   );
 };

@@ -29,14 +29,10 @@ const App = () => (
         <BrowserRouter>
           {/* ✅ Centralized routing directly here */}
           <Routes>
-            {/* Public */}
-            <Route path="/*" element={<PublicRoutes />} />
-<Route path="/auth" element={<Auth />} />
-            {/* Admin */}
+            <Route path="/auth" element={<Auth />} />
             <Route path="/admin/*" element={<AdminRoutes />} />
-
-            {/* Super Admin */}
             <Route path="/superadmin/*" element={<SuperAdminRoutes />} />
+            <Route path="/*" element={<PublicRoutes />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

@@ -1756,6 +1756,15 @@ const JudgmentSection = () => {
     { _id: "Labor", name: "Labor", color: "from-[#800020] to-[#D4AF37]" },
   ];
 
+  // Listen for category filter from header nav
+  useEffect(() => {
+    const handler = (e: CustomEvent<string>) => {
+      if (e.detail) setActiveTab(e.detail);
+    };
+    window.addEventListener("judgment-filter", handler as EventListener);
+    return () => window.removeEventListener("judgment-filter", handler as EventListener);
+  }, []);
+
   // Fetch judgments
   const fetchJudgments = useCallback(async () => {
     try {
@@ -2082,6 +2091,7 @@ const JudgmentSection = () => {
 
   return (
     <section 
+      id="judgments"
       className="min-h-screen py-16"
       style={{ background: COLOR_SCHEME.gradients.primary }}
     >

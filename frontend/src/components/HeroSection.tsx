@@ -113,7 +113,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section ref={containerRef} className="relative min-h-screen overflow-hidden">
+    <section id="hero" ref={containerRef} className="relative min-h-screen overflow-hidden">
       {/* Background Images with Parallax */}
       <motion.div
         className="absolute inset-0 z-0"
