@@ -295,7 +295,7 @@ userSchema.methods.createOTP = function () {
   return otp;
 };
 
-userSchema.methods.getPublicProfile = function () {
+userSchema.methods.getProfile = function () {
   const userObj = this.toObject();
   delete userObj.password;
   delete userObj.otp;
