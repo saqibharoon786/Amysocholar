@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const Judgment = require('../models/judgment.model');
 const Purchase = require('../models/purchases.model');
 const AppError = require('../utils/appError');
@@ -19,20 +21,43 @@ const uploadJudgment = async (req, res, next) => {
       keywords,
       summary,
       price,
-      currency = 'PKR'
+      currency = 'PKR',
+      textContent
     } = req.body;
 
     // Check if judgment already exists
     const existingJudgment = await Judgment.findOne({ citation });
     if (existingJudgment) {
-      return next(new AppError('Judgment with this citation already exists', 400));
+      return next(new AppError('Judgment with this citation already exists', 409));
+    }
+
+    // PDF is required
+    const pdfPath = req.files?.pdfFile?.[0] ? `/uploads/pdfs/${req.files.pdfFile[0].filename}` : null;
+    if (!pdfPath) {
+      return next(new AppError('PDF file is required', 400));
+    }
+
+    // Resolve textFile: either uploaded file or create from textContent
+    let textFilePath = req.files?.textFile?.[0] ? `/uploads/texts/${req.files.textFile[0].filename}` : null;
+    if (!textFilePath && textContent && String(textContent).trim()) {
+      const textsDir = path.join(__dirname, '../uploads/texts');
+      if (!fs.existsSync(textsDir)) {
+        fs.mkdirSync(textsDir, { recursive: true });
+      }
+      const safeCitation = (citation || 'judgment').replace(/[^a-zA-Z0-9-_]/g, '_').slice(0, 50);
+      const filename = `text-${safeCitation}-${Date.now()}.txt`;
+      const filePath = path.join(textsDir, filename);
+      fs.writeFileSync(filePath, String(textContent).trim(), 'utf8');
+      textFilePath = `/uploads/texts/${filename}`;
+    }
+    if (!textFilePath) {
+      return next(new AppError('Text content or text file is required. Add judgment text in the content field or upload a text file.', 400));
     }
 
     // ✅ UPDATED: Process cover images with relative paths like book controller
-    const coverImages = req.files?.coverImages ? 
+    const coverImages = req.files?.coverImages ?
       req.files.coverImages.map(file => `/uploads/covers/${file.filename}`) : [];
 
-    // ✅ UPDATED: Process files with relative paths like book controller
     const judgment = await Judgment.create({
       citation,
       caseNumber,
@@ -48,9 +73,9 @@ const uploadJudgment = async (req, res, next) => {
       summary,
       price,
       currency,
-      pdfFile: req.files?.pdfFile?.[0] ? `/uploads/pdfs/${req.files.pdfFile[0].filename}` : null,
-      textFile: req.files?.textFile?.[0] ? `/uploads/texts/${req.files.textFile[0].filename}` : null,
-      coverImages, // ✅ UPDATED: Save cover images with relative paths
+      pdfFile: pdfPath,
+      textFile: textFilePath,
+      coverImages,
       uploader: req.user.id,
     });
 

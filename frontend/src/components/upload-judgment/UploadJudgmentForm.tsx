@@ -78,6 +78,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { JudgmentService, type Judgment as ApiJudgment, type JudgmentFilters } from "@/services/JudgmentService";
+import { constructImageUrl } from "@/services/BookService";
 
 interface UploadJudgmentFormProps {
   isLoading: boolean;
@@ -160,6 +162,7 @@ interface Judgment {
   price: number;
   currency: string;
   pdfFile?: string;
+  coverImages?: string[];
   uploader: any;
   viewCount: number;
   purchaseCount: number;
@@ -224,111 +227,53 @@ const UploadJudgmentForm = ({
   const coverImagesRef = useRef<HTMLInputElement>(null);
   const textEditorRef = useRef<HTMLDivElement>(null);
 
-  // Fix: Define judgment service API call (replace with your actual API)
-  const fetchJudgmentsFromAPI = async () => {
-    try {
-      // Replace this with your actual API call
-      // const response = await fetch('/api/judgments/get-all-judgment');
-      // const data = await response.json();
-      // return data.judgments || [];
-      
-      // Mock data for now
-      return [
-        {
-          _id: "1",
-          citation: "PLD 2024 SC 1",
-          caseNumber: "C.P. 1/2024",
-          parties: "State vs Defendant",
-          caseTitle: "Constitutional Petition",
-          court: "Supreme Court of Pakistan",
-          judge: "Justice Ali Khan",
-          caseType: "Constitutional",
-          category: "Constitutional Law",
-          year: 2024,
-          decisionDate: "2024-01-15",
-          keywords: ["constitution", "rights", "petition"],
-          summary: "This is a constitutional petition regarding fundamental rights...",
-          content: "<h1>Judgment Content</h1><p>This is the full judgment text...</p>",
-          contentFormat: "html",
-          price: 1000,
-          currency: "PKR",
-          pdfFile: "document.pdf",
-          uploader: { name: "Admin", email: "admin@example.com" },
-          viewCount: 150,
-          purchaseCount: 25,
-          isFeatured: true,
-          createdAt: "2024-01-20T10:30:00Z",
-          updatedAt: "2024-01-20T10:30:00Z"
-        },
-        {
-          _id: "2",
-          citation: "PLD 2023 HC 45",
-          caseNumber: "A.P. 45/2023",
-          parties: "Company vs Employee",
-          caseTitle: "Employment Dispute",
-          court: "High Court",
-          judge: "Justice Sara Ahmed",
-          caseType: "Labor",
-          category: "Labor Law",
-          year: 2023,
-          decisionDate: "2023-11-20",
-          keywords: ["employment", "termination", "compensation"],
-          summary: "Case regarding wrongful termination and compensation...",
-          content: "<h1>Judgment</h1><p>Employment dispute judgment text...</p>",
-          contentFormat: "html",
-          price: 500,
-          currency: "PKR",
-          pdfFile: "document2.pdf",
-          uploader: { name: "Admin", email: "admin@example.com" },
-          viewCount: 89,
-          purchaseCount: 12,
-          isFeatured: false,
-          createdAt: "2023-11-25T14:20:00Z",
-          updatedAt: "2023-11-25T14:20:00Z"
-        }
-      ];
-    } catch (error) {
-      console.error("Error fetching judgments:", error);
-      return [];
-    }
+  // Normalize API judgment to table shape (backend sends views/purchases, coverImages)
+  const normalizeJudgment = (j: ApiJudgment & { views?: number; purchases?: number; coverImages?: string[] }): Judgment => ({
+    ...j,
+    keywords: Array.isArray(j.keywords) ? j.keywords : [],
+    viewCount: j.viewCount ?? (j as any).views ?? 0,
+    purchaseCount: j.purchaseCount ?? (j as any).purchases ?? 0,
+    coverImages: Array.isArray((j as any).coverImages) ? (j as any).coverImages : [],
+  });
+
+  const getJudgmentCoverUrl = (j: Judgment): string => {
+    const first = j.coverImages?.[0];
+    return first && String(first).trim() ? constructImageUrl(first) : "/placeholder-book.png";
   };
 
-  // Fetch judgments from API
+  // Fetch judgments from database
   const fetchJudgments = async () => {
     try {
       setLoadingJudgments(true);
-      const data = await fetchJudgmentsFromAPI();
-      
-      // Filter judgments based on search and filters
-      let filtered = data;
-      
-      if (searchTerm) {
+      const params: JudgmentFilters = {
+        limit: 100,
+        sortBy: "createdAt",
+        sortOrder: "desc",
+      };
+      if (tableFilters.court) params.court = tableFilters.court;
+      if (tableFilters.caseType) params.caseType = tableFilters.caseType;
+      if (tableFilters.category) params.category = tableFilters.category;
+      if (tableFilters.year) params.year = parseInt(tableFilters.year, 10) || undefined;
+      if (searchTerm.trim()) params.search = searchTerm.trim();
+
+      const res = await JudgmentService.getAllJudgments(params);
+      const list = res.success && res.data?.judgments ? res.data.judgments : [];
+      const normalized = list.map(normalizeJudgment);
+
+      // Client-side filter by search term if API doesn't support it or for extra filtering
+      let filtered = normalized;
+      if (searchTerm.trim()) {
         const term = searchTerm.toLowerCase();
-        filtered = filtered.filter(j => 
-          j.citation.toLowerCase().includes(term) ||
-          j.caseNumber?.toLowerCase().includes(term) ||
-          j.parties.toLowerCase().includes(term) ||
-          j.caseTitle.toLowerCase().includes(term) ||
-          j.summary?.toLowerCase().includes(term)
+        filtered = normalized.filter(
+          (j) =>
+            j.citation.toLowerCase().includes(term) ||
+            j.caseNumber?.toLowerCase().includes(term) ||
+            j.parties.toLowerCase().includes(term) ||
+            j.caseTitle.toLowerCase().includes(term) ||
+            j.summary?.toLowerCase().includes(term)
         );
       }
-      
-      if (tableFilters.court) {
-        filtered = filtered.filter(j => j.court === tableFilters.court);
-      }
-      
-      if (tableFilters.caseType) {
-        filtered = filtered.filter(j => j.caseType === tableFilters.caseType);
-      }
-      
-      if (tableFilters.category) {
-        filtered = filtered.filter(j => j.category === tableFilters.category);
-      }
-      
-      if (tableFilters.year) {
-        filtered = filtered.filter(j => j.year.toString() === tableFilters.year);
-      }
-      
+
       setJudgments(filtered);
     } catch (error) {
       console.error("Error fetching judgments:", error);
@@ -428,63 +373,9 @@ const UploadJudgmentForm = ({
     executeCommand('unlink');
   }, [executeCommand]);
 
-  const validateStep = (step: number): boolean => {
-    const errors: Record<string, string> = {};
-
-    switch (step) {
-      case 0:
-        if (!formData.citation.trim()) errors.citation = "Citation is required";
-        if (!formData.caseNumber.trim()) errors.caseNumber = "Case number is required";
-        if (!formData.parties.trim()) errors.parties = "Parties are required";
-        if (!formData.court) errors.court = "Court is required";
-        if (!formData.caseType) errors.caseType = "Case type is required";
-        if (!formData.category) errors.category = "Category is required";
-        break;
-      
-      case 1:
-        if (!formData.year.trim()) errors.year = "Year is required";
-        if (parseInt(formData.year) < 1900 || parseInt(formData.year) > new Date().getFullYear()) {
-          errors.year = "Year must be between 1900 and current year";
-        }
-        if (!formData.summary.trim()) errors.summary = "Summary is required";
-        if (formData.summary.length < 50) errors.summary = "Summary must be at least 50 characters";
-        break;
-      
-      case 2:
-        if (!formData.price.trim()) errors.price = "Price is required";
-        const price = parseFloat(formData.price);
-        if (isNaN(price) || price < 0) errors.price = "Price must be a valid positive number";
-        if (price > 1000000) errors.price = "Price cannot exceed 1,000,000";
-        break;
-      
-      case 3:
-        if (!pdfFile) errors.pdfFile = "PDF file is required";
-        
-        if (pdfFile) {
-          if (!pdfFile.file.type.includes('pdf')) {
-            errors.pdfFile = "Please upload a valid PDF file";
-          }
-          if (pdfFile.file.size > 50 * 1024 * 1024) {
-            errors.pdfFile = "PDF file size must be less than 50MB";
-          }
-        }
-
-        if (coverImages.length > 0) {
-          const oversizedCover = coverImages.find(img => img.file.size > 5 * 1024 * 1024);
-          if (oversizedCover) {
-            errors.coverImages = 'Cover images must be less than 5MB each';
-          }
-        }
-        break;
-      
-      case 4:
-        if (!formData.content.trim()) errors.content = "Judgment content is required";
-        if (formData.content.length < 100) errors.content = "Judgment content must be at least 100 characters";
-        break;
-    }
-
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
+  const validateStep = (_step: number): boolean => {
+    setFormErrors({});
+    return true;
   };
 
   const nextStep = () => {
@@ -499,15 +390,7 @@ const UploadJudgmentForm = ({
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateStep(4)) {
-      toast({
-        title: "Validation Error",
-        description: "Please fix all errors before submitting",
-        variant: "destructive",
-      });
-      return;
-    }
+    setFormErrors({});
 
     // Create FormData
     const formDataToSend = new FormData();
@@ -616,26 +499,32 @@ const UploadJudgmentForm = ({
   const handleDelete = async (id: string) => {
     try {
       setDeletingId(id);
-      // Replace with actual API call
-      // await judgmentService.deleteJudgment(id);
-      
-      toast({
-        title: "Success",
-        description: "Judgment deleted successfully",
-      });
-      
-      // Refresh judgments
-      fetchJudgments();
-    } catch (error) {
+      const res = await JudgmentService.deleteJudgment(id);
+      if (res.success) {
+        toast({
+          title: "Success",
+          description: "Judgment deleted successfully",
+        });
+        setDeleteDialogOpen(false);
+        setSelectedJudgment(null);
+        fetchJudgments();
+      } else {
+        toast({
+          title: "Error",
+          description: (res as any).message || "Failed to delete judgment",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
       console.error("Error deleting judgment:", error);
+      const msg = error?.response?.data?.message || error?.message || "Failed to delete judgment";
       toast({
         title: "Error",
-        description: "Failed to delete judgment",
+        description: msg,
         variant: "destructive",
       });
     } finally {
       setDeletingId(null);
-      setDeleteDialogOpen(false);
     }
   };
 
@@ -839,6 +728,7 @@ const UploadJudgmentForm = ({
                   <Table>
                     <TableHeader>
                       <TableRow style={{ backgroundColor: '#1e293b' }}>
+                        <TableHead style={{ color: '#cbd5e1', width: 72 }}>Cover</TableHead>
                         <TableHead style={{ color: '#cbd5e1' }}>Citation</TableHead>
                         <TableHead style={{ color: '#cbd5e1' }}>Case Details</TableHead>
                         <TableHead style={{ color: '#cbd5e1' }}>Court & Type</TableHead>
@@ -851,7 +741,7 @@ const UploadJudgmentForm = ({
                     <TableBody>
                       {loadingJudgments ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center py-8">
+                          <TableCell colSpan={8} className="text-center py-8">
                             <div className="flex items-center justify-center space-x-2">
                               <Loader2 className="h-6 w-6 animate-spin" style={{ color: '#94a3b8' }} />
                               <span style={{ color: '#94a3b8' }}>Loading judgments...</span>
@@ -860,7 +750,7 @@ const UploadJudgmentForm = ({
                         </TableRow>
                       ) : judgments.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center py-8">
+                          <TableCell colSpan={8} className="text-center py-8">
                             <div className="flex flex-col items-center justify-center space-y-2">
                               <AlertTriangle className="h-12 w-12" style={{ color: '#94a3b8' }} />
                               <p style={{ color: '#94a3b8' }}>No judgments found</p>
@@ -883,6 +773,21 @@ const UploadJudgmentForm = ({
                       ) : (
                         judgments.map((judgment) => (
                           <TableRow key={judgment._id} style={{ borderColor: 'rgba(100, 116, 139, 0.15)' }}>
+                            <TableCell className="w-[72px]">
+                              <div
+                                className="w-12 h-16 rounded overflow-hidden flex-shrink-0 border border-slate-600/50 bg-slate-800/50"
+                                style={{ minWidth: 48, minHeight: 64 }}
+                              >
+                                <img
+                                  src={getJudgmentCoverUrl(judgment)}
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.src = "/placeholder-book.png";
+                                  }}
+                                />
+                              </div>
+                            </TableCell>
                             <TableCell>
                               <div className="space-y-1">
                                 <div className="font-medium" style={{ color: '#f1f5f9' }}>

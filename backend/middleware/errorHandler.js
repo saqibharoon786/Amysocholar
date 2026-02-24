@@ -25,7 +25,9 @@ const notFound = (req, res) => {
 };
 
 const errorHandler = (err, req, res, next) => {
-  let status = err.status || err.statusCode;
+  // Prefer numeric statusCode (e.g. from AppError); err.status may be string 'fail'/'error'
+  const numericStatus = typeof err.statusCode === 'number' ? err.statusCode : null;
+  let status = numericStatus ?? (typeof err.status === 'number' ? err.status : null);
   let message = err.message || "Something went wrong";
   
   // Handle various error types
@@ -83,14 +85,20 @@ const errorHandler = (err, req, res, next) => {
       message = 'Malformed JSON';
       break;
     
+    // Operational/AppError: keep statusCode and message
+    case err.isOperational && typeof err.statusCode === 'number':
+      status = err.statusCode;
+      break;
+    
     // Default to internal server error
     default:
       status = status || getStatusCode('INTERNAL_SERVER_ERROR');
       message = message || 'Internal server error';
   }
   
-  // Final status determination with fallback - ensure it's a number
-  status = parseInt(status) || getStatusCode('INTERNAL_SERVER_ERROR');
+  // Final status determination - use number, never string (e.g. 'fail')
+  const parsed = parseInt(status, 10);
+  status = Number.isFinite(parsed) ? parsed : getStatusCode('INTERNAL_SERVER_ERROR');
   
   // Ensure status is within valid HTTP range (100-599)
   if (status < 100 || status > 599) {
