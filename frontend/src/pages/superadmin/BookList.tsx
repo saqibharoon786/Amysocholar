@@ -65,7 +65,7 @@ const BookList = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/20 dark:from-slate-950 dark:via-blue-950/10 dark:to-purple-950/5 p-6 space-y-8 animate-in fade-in duration-1000">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 space-y-8 animate-in fade-in duration-1000">
       <style>
         {`
           @keyframes boom {
@@ -149,10 +149,10 @@ const BookList = () => {
               <BookOpen className="h-8 w-8 text-white animate-float" />
             </div>
             <div>
-              <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground via-primary to-primary bg-clip-text text-transparent">
+              <h2 className="text-4xl font-bold tracking-tight text-white">
                 Book Library
               </h2>
-              <p className="text-xl text-muted-foreground mt-2">
+              <p className="text-xl text-slate-400 mt-2">
                 Discover and manage your entire book collection
               </p>
             </div>
@@ -184,7 +184,7 @@ const BookList = () => {
         ].map((stat, index) => (
           <Card 
             key={stat.label}
-            className="border-0 shadow-xl hover:shadow-2xl transition-all duration-500 group cursor-pointer bg-gradient-to-br from-white to-white/80 dark:from-gray-900 dark:to-gray-900/80 backdrop-blur-sm"
+            className="border border-slate-600 bg-slate-800/80 shadow-xl backdrop-blur-sm group cursor-pointer hover:bg-slate-800 transition-all duration-500"
             style={{ 
               animationDelay: `${index * 150}ms`,
               animation: mounted ? `slideIn 0.6s ease-out ${index * 150}ms both` : 'none'
@@ -193,18 +193,18 @@ const BookList = () => {
             <CardContent className="p-6">
               <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-                  <p className="text-3xl font-bold mt-2 bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                  <p className="text-sm font-medium text-slate-400">{stat.label}</p>
+                  <p className="text-3xl font-bold mt-2 text-slate-100">
                     {stat.value}
                   </p>
                   <p className={`text-sm font-semibold mt-2 ${
-                    stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'
+                    stat.change.startsWith('+') ? 'text-emerald-400' : 'text-red-400'
                   }`}>
                     {stat.change}
                   </p>
                 </div>
-                <div className={`p-3 rounded-xl bg-${stat.color}-500/10 group-hover:scale-110 transition-transform duration-300`}>
-                  <div className={`w-6 h-6 bg-${stat.color}-500 rounded-full`} />
+                <div className="p-3 rounded-xl bg-slate-700 group-hover:scale-110 transition-transform duration-300">
+                  <div className="w-6 h-6 bg-slate-500 rounded-full" />
                 </div>
               </div>
             </CardContent>
@@ -213,33 +213,33 @@ const BookList = () => {
       </div>
 
       {/* Filter Section */}
-      <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-500 bg-gradient-to-br from-white to-blue-50/30 dark:from-gray-900 dark:to-blue-950/10 backdrop-blur-sm">
+      <Card className="border border-slate-600 bg-slate-800/80 shadow-xl backdrop-blur-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-2xl font-bold flex items-center gap-3">
-            <Filter className="h-6 w-6 text-primary" />
+          <CardTitle className="text-2xl font-bold flex items-center gap-3 text-slate-100">
+            <Filter className="h-6 w-6 text-slate-400" />
             Filter & Search
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="flex-1 relative group">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors duration-300" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
               <Input
                 placeholder="Search by title, author, or description..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-12 h-14 text-lg border-2 focus:border-primary/50 transition-all duration-300 rounded-xl shadow-sm"
+                className="pl-12 h-14 text-lg border-slate-500 bg-slate-700/50 text-slate-100 placeholder:text-slate-400 rounded-xl"
               />
             </div>
             <div className="w-full lg:w-80">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="h-14 text-lg border-2 focus:border-primary/50 transition-all duration-300 rounded-xl">
-                  <Filter className="h-5 w-5 mr-3 text-muted-foreground" />
+                <SelectTrigger className="h-14 text-lg border-slate-500 bg-slate-700/50 text-slate-100 rounded-xl">
+                  <Filter className="h-5 w-5 mr-3 text-slate-400" />
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-slate-800 border-slate-600">
                   {categories.map((cat) => (
-                    <SelectItem key={cat} value={cat} className="text-lg py-3">
+                    <SelectItem key={cat} value={cat} className="text-lg py-3 text-slate-200 focus:bg-slate-700">
                       {cat}
                     </SelectItem>
                   ))}
@@ -250,16 +250,16 @@ const BookList = () => {
           
           {/* Quick Stats */}
           <div className="flex flex-wrap gap-4 mt-6">
-            <Badge variant="secondary" className="px-4 py-2 text-sm bg-blue-500/10 text-blue-600 border-blue-500/20">
+            <Badge variant="secondary" className="px-4 py-2 text-sm bg-slate-600 text-slate-200 border-slate-500">
               {filteredBooks.length} books found
             </Badge>
             {selectedCategory !== "All Categories" && (
-              <Badge variant="secondary" className="px-4 py-2 text-sm bg-green-500/10 text-green-600 border-green-500/20">
+              <Badge variant="secondary" className="px-4 py-2 text-sm bg-emerald-900/40 text-emerald-300 border-emerald-600/50">
                 Category: {selectedCategory}
               </Badge>
             )}
             {searchTerm && (
-              <Badge variant="secondary" className="px-4 py-2 text-sm bg-purple-500/10 text-purple-600 border-purple-500/20">
+              <Badge variant="secondary" className="px-4 py-2 text-sm bg-purple-900/40 text-purple-300 border-purple-600/50">
                 Search: "{searchTerm}"
               </Badge>
             )}
@@ -268,12 +268,12 @@ const BookList = () => {
       </Card>
 
       {/* Books Table */}
-      <Card className="border-0 shadow-xl hover:shadow-2xl transition-all duration-500 bg-gradient-to-br from-white to-purple-50/30 dark:from-gray-900 dark:to-purple-950/10 backdrop-blur-sm overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent border-b">
-          <CardTitle className="text-2xl font-bold flex items-center gap-3">
-            <BookOpen className="h-6 w-6 text-primary" />
+      <Card className="border border-slate-600 bg-slate-800/80 shadow-xl overflow-hidden">
+        <CardHeader className="border-b border-slate-600 bg-slate-800">
+          <CardTitle className="text-2xl font-bold flex items-center gap-3 text-slate-100">
+            <BookOpen className="h-6 w-6 text-slate-400" />
             Books Inventory
-            <Badge variant="secondary" className="ml-2 px-3 py-1 bg-primary/10 text-primary border-primary/20">
+            <Badge variant="secondary" className="ml-2 px-3 py-1 bg-slate-600 text-slate-200 border-slate-500">
               {filteredBooks.length}
             </Badge>
           </CardTitle>
@@ -282,21 +282,21 @@ const BookList = () => {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/50 hover:bg-muted/70 transition-colors">
-                  <TableHead className="h-16 text-lg font-bold text-foreground">Book Title</TableHead>
-                  <TableHead className="h-16 text-lg font-bold text-foreground">Author</TableHead>
-                  <TableHead className="h-16 text-lg font-bold text-foreground">Category</TableHead>
-                  <TableHead className="h-16 text-lg font-bold text-foreground">Price</TableHead>
-                  <TableHead className="h-16 text-lg font-bold text-foreground">Stock</TableHead>
-                  <TableHead className="h-16 text-lg font-bold text-foreground">Status</TableHead>
-                  <TableHead className="h-16 text-lg font-bold text-foreground text-right">Actions</TableHead>
+                <TableRow className="bg-slate-700/50 border-b border-slate-600 hover:bg-slate-700/70">
+                  <TableHead className="h-16 text-lg font-bold text-slate-200">Book Title</TableHead>
+                  <TableHead className="h-16 text-lg font-bold text-slate-200">Author</TableHead>
+                  <TableHead className="h-16 text-lg font-bold text-slate-200">Category</TableHead>
+                  <TableHead className="h-16 text-lg font-bold text-slate-200">Price</TableHead>
+                  <TableHead className="h-16 text-lg font-bold text-slate-200">Stock</TableHead>
+                  <TableHead className="h-16 text-lg font-bold text-slate-200">Status</TableHead>
+                  <TableHead className="h-16 text-lg font-bold text-slate-200 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredBooks.map((book, index) => (
                   <TableRow 
                     key={book.id}
-                    className={`group hover:bg-muted/50 transition-all duration-300 ${
+                    className={`border-b border-slate-600 hover:bg-slate-700/30 transition-all duration-300 ${
                       book.isNew ? 'new-book-highlight animate-boom' : ''
                     }`}
                     style={{ 
@@ -306,32 +306,32 @@ const BookList = () => {
                   >
                     <TableCell className="py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-lg">
-                          <BookOpen className="h-5 w-5 text-white" />
+                        <div className="w-10 h-10 bg-slate-600 rounded-lg flex items-center justify-center">
+                          <BookOpen className="h-5 w-5 text-slate-300" />
                         </div>
                         <div>
-                          <div className="font-semibold text-lg group-hover:text-primary transition-colors">
+                          <div className="font-semibold text-lg text-slate-100">
                             {book.title}
                           </div>
-                          <div className="text-sm text-muted-foreground">ID: {book.id}</div>
+                          <div className="text-sm text-slate-400">ID: {book.id}</div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell className="py-4">
-                      <div className="text-lg font-medium">{book.author}</div>
+                      <div className="text-lg font-medium text-slate-200">{book.author}</div>
                     </TableCell>
                     <TableCell className="py-4">
-                      <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-sm px-3 py-1">
+                      <Badge variant="outline" className="bg-slate-600/50 text-slate-200 border-slate-500 text-sm px-3 py-1">
                         {book.category}
                       </Badge>
                     </TableCell>
                     <TableCell className="py-4">
-                      <div className="text-xl font-bold text-green-600">₹{book.price}</div>
+                      <div className="text-xl font-bold text-emerald-400">₹{book.price}</div>
                     </TableCell>
                     <TableCell className="py-4">
                       <div className="flex items-center gap-3">
-                        <div className="text-lg font-semibold">{book.quantity}</div>
-                        <div className="w-20 bg-muted rounded-full h-2">
+                        <div className="text-lg font-semibold text-slate-200">{book.quantity}</div>
+                        <div className="w-20 bg-slate-600 rounded-full h-2">
                           <div 
                             className={`h-2 rounded-full ${
                               book.quantity > 50 ? 'bg-green-500' : 
@@ -346,25 +346,25 @@ const BookList = () => {
                       <Badge className={`
                         px-3 py-1 text-sm font-semibold border-0
                         ${book.status === 'published' 
-                          ? 'bg-green-500/10 text-green-600' 
+                          ? 'bg-emerald-900/50 text-emerald-300' 
                           : book.status === 'pending'
-                          ? 'bg-yellow-500/10 text-yellow-600'
-                          : 'bg-red-500/10 text-red-600'
+                          ? 'bg-amber-900/50 text-amber-300'
+                          : 'bg-red-900/50 text-red-300'
                         }
                       `}>
                         {book.status}
                       </Badge>
                     </TableCell>
                     <TableCell className="py-4">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <Button variant="outline" size="sm" className="h-9 w-9 p-0 hover:bg-blue-500 hover:text-white transition-all duration-300">
-                          <Eye className="h-4 w-4" />
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="sm" className="h-9 w-9 p-0 border-slate-500 bg-slate-700 text-slate-100 hover:bg-slate-600" title="View">
+                          <Eye className="h-4 w-4 text-slate-100" />
                         </Button>
-                        <Button variant="outline" size="sm" className="h-9 w-9 p-0 hover:bg-green-500 hover:text-white transition-all duration-300">
-                          <Edit className="h-4 w-4" />
+                        <Button variant="outline" size="sm" className="h-9 w-9 p-0 border-slate-500 bg-slate-700 text-slate-100 hover:bg-slate-600" title="Edit">
+                          <Edit className="h-4 w-4 text-slate-100" />
                         </Button>
-                        <Button variant="outline" size="sm" className="h-9 w-9 p-0 hover:bg-red-500 hover:text-white transition-all duration-300">
-                          <Trash2 className="h-4 w-4" />
+                        <Button variant="outline" size="sm" className="h-9 w-9 p-0 border-slate-500 bg-slate-700 text-red-300 hover:bg-red-900/50" title="Delete">
+                          <Trash2 className="h-4 w-4 text-red-300" />
                         </Button>
                       </div>
                     </TableCell>
@@ -377,9 +377,9 @@ const BookList = () => {
           {/* Empty State */}
           {filteredBooks.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <BookOpen className="h-24 w-24 text-muted-foreground/40 mb-6" />
-              <h3 className="text-2xl font-semibold text-muted-foreground mb-3">No books found</h3>
-              <p className="text-muted-foreground text-lg mb-6 max-w-md">
+              <BookOpen className="h-24 w-24 text-slate-500 mb-6" />
+              <h3 className="text-2xl font-semibold text-slate-300 mb-3">No books found</h3>
+              <p className="text-slate-400 text-lg mb-6 max-w-md">
                 {searchTerm || selectedCategory !== "All Categories" 
                   ? "Try adjusting your search or filter criteria"
                   : "Get started by uploading your first book to the library"
@@ -387,7 +387,7 @@ const BookList = () => {
               </p>
               <Button 
                 onClick={handleAddMockBook}
-                className="h-12 px-8 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                className="h-12 px-8 text-lg font-semibold bg-slate-600 hover:bg-slate-500 text-white border-slate-500"
               >
                 <Plus className="h-5 w-5 mr-2" />
                 Add Demo Book

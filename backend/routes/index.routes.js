@@ -11,7 +11,9 @@ const favoriteRoutes = require("./favorite.routes");
 const paymentRoutes = require("./payment.routes");
 const payoutRoutes = require("./payout.routes");  
 const commissionRoutes = require("./commission.routes");  
-const verificationRoutes = require("./verification.routes")
+const verificationRoutes = require("./verification.routes");
+const purchasesRoutes = require("./purchases.routes");
+const categoryRoutes = require("./category.routes");
 
 // API BASE PATHS
 router.use("/auth", authRoutes);
@@ -23,6 +25,8 @@ router.use("/favorites", favoriteRoutes);
 router.use("/payments", paymentRoutes); 
 router.use("/payouts", payoutRoutes);  
 router.use("/commissions", commissionRoutes);  
-router.use("/verification", verificationRoutes)
+router.use("/verification", verificationRoutes);
+router.use("/purchase", purchasesRoutes);
+router.use("/category", categoryRoutes);
 
 module.exports = router;

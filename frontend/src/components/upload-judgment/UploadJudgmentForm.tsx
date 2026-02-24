@@ -80,6 +80,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { JudgmentService, type Judgment as ApiJudgment, type JudgmentFilters } from "@/services/JudgmentService";
 import { constructImageUrl } from "@/services/BookService";
+import { categoryService } from "@/services/categoryService";
 
 interface UploadJudgmentFormProps {
   isLoading: boolean;
@@ -106,18 +107,6 @@ const CASE_TYPES = [
   "Tax",
   "Labor",
   "Customs",
-];
-
-const CATEGORIES = [
-  "Contract Law",
-  "Property Law",
-  "Tort Law",
-  "Criminal Law",
-  "Constitutional Law",
-  "Family Law",
-  "Corporate Law",
-  "Tax Law",
-  "Labor Law",
 ];
 
 const CURRENCIES = ["PKR", "USD"];
@@ -222,6 +211,12 @@ const UploadJudgmentForm = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedJudgment, setSelectedJudgment] = useState<Judgment | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [categories, setCategories] = useState<string[]>([]);
+  useEffect(() => {
+    categoryService.getCategories().then((res) => {
+      if (res.success && res.data) setCategories(res.data);
+    });
+  }, []);
 
   const pdfFileRef = useRef<HTMLInputElement>(null);
   const coverImagesRef = useRef<HTMLInputElement>(null);
@@ -663,21 +658,21 @@ const UploadJudgmentForm = ({
                       value={tableFilters.category}
                       onValueChange={(value) => handleTableFilterChange("category", value)}
                     >
-                      <SelectTrigger className="h-11 rounded-lg" style={{
+                      <SelectTrigger className="h-11 rounded-lg placeholder:text-slate-400 [&>span]:text-slate-100" style={{
                         backgroundColor: '#1f2937',
                         borderColor: '#374151',
                         color: '#f1f5f9'
                       }}>
                         <SelectValue placeholder="Category" />
                       </SelectTrigger>
-                      <SelectContent style={{
+                      <SelectContent className="text-slate-100" style={{
                         backgroundColor: '#1f2937',
                         borderColor: '#374151',
                         color: '#f1f5f9'
                       }}>
-                        <SelectItem key="all-categories" value="all">All Categories</SelectItem>
-                        {CATEGORIES.map((category) => (
-                          <SelectItem key={category} value={category}>
+                        <SelectItem key="all-categories" value="all" className="text-slate-100 focus:bg-slate-600 focus:text-white">All Categories</SelectItem>
+                        {categories.map((category) => (
+                          <SelectItem key={category} value={category} className="text-slate-100 focus:bg-slate-600 focus:text-white">
                             {category}
                           </SelectItem>
                         ))}
@@ -1303,26 +1298,26 @@ const UploadJudgmentForm = ({
                             )}
                           </div>
 
-                          {/* Category Select - FIXED */}
+                          {/* Category Select - from API, visible text */}
                           <div className="space-y-2">
                             <Label htmlFor="category" className="font-medium flex items-center gap-1" style={{ color: '#cbd5e1' }}>
                               Category <span style={{ color: '#ef4444' }}>*</span>
                             </Label>
                             <Select value={formData.category} onValueChange={(v) => handleInputChange('category', v)}>
-                              <SelectTrigger className="h-11 rounded-lg transition-colors" style={{
+                              <SelectTrigger className="h-11 rounded-lg transition-colors placeholder:text-slate-400 [&>span]:text-slate-100" style={{
                                 backgroundColor: '#1f2937',
                                 borderColor: '#374151',
                                 color: '#f1f5f9'
                               }}>
                                 <SelectValue placeholder="Select category" />
                               </SelectTrigger>
-                              <SelectContent style={{
+                              <SelectContent className="text-slate-100" style={{
                                 backgroundColor: '#1f2937',
                                 borderColor: '#374151',
                                 color: '#f1f5f9'
                               }}>
-                                {CATEGORIES.map(category => (
-                                  <SelectItem key={`category-${category}`} value={category}>
+                                {categories.map((category) => (
+                                  <SelectItem key={`category-${category}`} value={category} className="text-slate-100 focus:bg-slate-600 focus:text-white">
                                     {category}
                                   </SelectItem>
                                 ))}

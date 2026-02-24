@@ -9,8 +9,7 @@ import {
   LayoutDashboard, 
   Upload, 
   ShoppingCart, 
-  Book, 
-  User
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,53 +23,146 @@ const AdminLayout = () => {
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Upload Book', href: '/admin/upload', icon: Upload },
     { name: 'Book Shop', href: '/admin/shop', icon: ShoppingCart },
-    { name: 'Book List', href: '/admin/books', icon: Book },
     { name: 'Profile', href: '/admin/profile', icon: User },
   ];
 
   const isActive = (href: string) => location.pathname === href;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <div className="w-64 bg-white border-r fixed h-full">
-        <div className="p-4 border-b">
-          <Link to="/admin/dashboard" className="flex items-center gap-2">
-            <BookOpen className="h-6 w-6 text-blue-600" />
+    <div className="min-h-screen flex" style={{ backgroundColor: '#0F1729' }}>
+      {/* Sidebar - same as SuperAdmin */}
+      <div
+        className="w-64 fixed h-full flex flex-col"
+        style={{
+          background: '#1a2234',
+          borderRight: '1px solid rgba(100, 116, 139, 0.15)'
+        }}
+      >
+        <div className="p-5 border-b" style={{ borderColor: 'rgba(100, 116, 139, 0.15)' }}>
+          <Link to="/admin/dashboard" className="flex items-center gap-3">
+            <img
+              src="/logo.png"
+              alt="AMY ScholarNest"
+              className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+              style={{ border: '1px solid rgba(100, 116, 139, 0.2)' }}
+            />
             <div>
-              <div className="font-semibold">Admin Panel</div>
-              <div className="text-xs text-gray-500">Book Management</div>
+              <div className="font-bold text-lg tracking-tight" style={{ color: '#f1f5f9' }}>
+                AMY ScholarNest
+              </div>
+              <div className="text-xs" style={{ color: '#94a3b8' }}>
+                Admin Panel
+              </div>
             </div>
           </Link>
         </div>
 
-        <nav className="p-4 space-y-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-                isActive(item.href)
-                  ? "bg-blue-600 text-white"
-                  : "hover:bg-gray-100"
-              )}
+        <div className="p-4">
+          <div
+            className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all hover:bg-slate-800/30"
+            style={{
+              backgroundColor: '#1e293b',
+              border: '1px solid rgba(100, 116, 139, 0.2)'
+            }}
+          >
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center"
+              style={{
+                backgroundColor: '#334155',
+                border: '1px solid rgba(100, 116, 139, 0.3)'
+              }}
             >
-              <item.icon className="h-4 w-4" />
-              {item.name}
-            </Link>
-          ))}
+              <User className="h-5 w-5" style={{ color: '#cbd5e1' }} />
+            </div>
+            <div>
+              <div className="font-semibold text-sm" style={{ color: '#f1f5f9' }}>
+                {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : 'Admin'}
+              </div>
+              <div className="text-xs" style={{ color: '#94a3b8' }}>
+                Administrator
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-5 pt-2 pb-3">
+          <span className="text-xs font-semibold tracking-wider uppercase" style={{ color: '#94a3b8' }}>
+            Navigation
+          </span>
+        </div>
+
+        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+          {navItems.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.name}
+                to={item.href}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 mx-2 rounded-lg text-sm transition-all duration-200 group relative",
+                  active && "shadow-sm"
+                )}
+                style={{
+                  backgroundColor: active ? '#2d3748' : 'transparent',
+                  color: active ? '#f8fafc' : '#cbd5e1',
+                  border: active ? '1px solid rgba(148, 163, 184, 0.2)' : '1px solid transparent',
+                }}
+              >
+                {active && (
+                  <div className="absolute -left-1 top-1/2 -translate-y-1/2">
+                    <div className="w-1 h-5 rounded-full" style={{ backgroundColor: '#94a3b8' }} />
+                  </div>
+                )}
+                <div
+                  className={cn(
+                    "p-2 rounded-md flex-shrink-0 transition-all duration-200",
+                    active ? "bg-slate-700/50" : "bg-slate-800/30 group-hover:bg-slate-700/50"
+                  )}
+                >
+                  <item.icon
+                    className={cn(
+                      "h-4 w-4 transition-all duration-200",
+                      active ? "text-slate-300" : "text-slate-400 group-hover:text-slate-300"
+                    )}
+                  />
+                </div>
+                <span className="font-medium tracking-wide">{item.name}</span>
+                {active && (
+                  <div className="ml-auto">
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                  </div>
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
-          <Button onClick={() => logout().then(() => navigate("/"))} variant="outline" className="w-full">
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
+        <div className="p-4 mt-auto border-t" style={{ borderColor: 'rgba(100, 116, 139, 0.15)' }}>
+          <Button
+            onClick={() => logout().then(() => navigate("/"))}
+            variant="ghost"
+            className="w-full justify-start gap-3 px-4 py-3 h-auto rounded-lg hover:bg-slate-800/30 transition-all duration-200 group"
+            style={{
+              color: '#f87171',
+              backgroundColor: 'rgba(239, 68, 68, 0.05)',
+              border: '1px solid rgba(239, 68, 68, 0.1)'
+            }}
+          >
+            <div className="p-2 rounded-md" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
+              <LogOut className="h-4 w-4" style={{ color: '#f87171' }} />
+            </div>
+            <span className="font-semibold text-sm">Logout</span>
           </Button>
         </div>
       </div>
 
-      <div className="flex-1 ml-64">
+      <div
+        className="flex-1 ml-64 min-h-screen"
+        style={{
+          backgroundColor: '#0f1729',
+          backgroundImage: 'linear-gradient(180deg, rgba(30, 41, 59, 0.1) 0%, transparent 50px)'
+        }}
+      >
         <div className="p-8">
           <Outlet />
         </div>

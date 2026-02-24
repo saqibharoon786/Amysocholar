@@ -8,13 +8,10 @@ const {
   updatePassword,
   uploadProfileImage,
   verifyCNIC,
+  updatePaymentInfo,
+  getDashboardStats,
   getAllUsers,
-//   getUserById,
-//   updateUser,
-//   deleteUser,
-//   deactivateUser,
   getAdminStats,
-//   getCustomerStats
 } = require("../controllers/user.controller");
 
 // ================== 👤 USER ROUTES ==================
@@ -25,6 +22,8 @@ router.patch("/update-profile", updateProfile);
 router.patch("/change-password", updatePassword);
 router.patch("/upload-profile-image", uploadProfile, uploadProfileImage);
 router.post("/upload-cnic", uploadCNIC, verifyCNIC);
+router.patch("/payment-info", updatePaymentInfo);
+router.get("/dashboard-stats", getDashboardStats);
 
 // ================== 🧑‍⚖️ SUPERADMIN ROUTES ==================
 router.get("/get-users", isSuperAdmin, getAllUsers);

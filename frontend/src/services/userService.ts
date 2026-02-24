@@ -101,31 +101,54 @@ export interface ApiResponse<T = any> {
 export const userService = {
   // ================== 👤 USER ROUTES ==================
   getProfile: async (): Promise<ApiResponse<{ user: UserProfile }>> => {
-    const response = await api.get<ApiResponse<{ user: UserProfile }>>('/user/profile');
+    const response = await api.get<ApiResponse<{ user: UserProfile }>>('/users/profile');
     return response.data;
   },
 
   updateProfile: async (data: UpdateProfileData): Promise<ApiResponse<{ user: UserProfile }>> => {
-    const response = await api.patch<ApiResponse<{ user: UserProfile }>>('/user/update-profile', data);
+    const response = await api.patch<ApiResponse<{ user: UserProfile }>>('/users/update-profile', data);
     return response.data;
   },
 
   updatePassword: async (data: ChangePasswordData): Promise<ApiResponse> => {
-    const response = await api.patch<ApiResponse>('/user/change-password', data);
+    const response = await api.patch<ApiResponse>('/users/change-password', data);
     return response.data;
   },
 
   uploadProfileImage: async (formData: FormData): Promise<ApiResponse<{ user: UserProfile }>> => {
-    const response = await api.patch<ApiResponse<{ user: UserProfile }>>('/user/upload-profile-image', formData, {
+    const response = await api.patch<ApiResponse<{ user: UserProfile }>>('/users/upload-profile-image', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;
   },
 
   verifyCNIC: async (formData: FormData): Promise<ApiResponse<{ user: UserProfile }>> => {
-    const response = await api.post<ApiResponse<{ user: UserProfile }>>('/user/verify-cnic', formData, {
+    const response = await api.post<ApiResponse<{ user: UserProfile }>>('/users/verify-cnic', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
+    return response.data;
+  },
+
+  updatePaymentInfo: async (data: {
+    jazzcashNumber?: string;
+    easypaisaNumber?: string;
+    bankAccount?: { accountTitle?: string; accountNumber?: string; bankName?: string; iban?: string };
+  }): Promise<ApiResponse<{ user: UserProfile }>> => {
+    const response = await api.patch<ApiResponse<{ user: UserProfile }>>('/users/payment-info', data);
+    return response.data;
+  },
+
+  getDashboardStats: async (): Promise<ApiResponse<{
+    totalUsers?: number;
+    totalAdmins?: number;
+    totalCustomers?: number;
+    pendingVerifications?: number;
+    totalBooks?: number;
+    totalRevenue?: number;
+    totalOrders?: number;
+    pendingBooks?: number;
+  }>> => {
+    const response = await api.get<ApiResponse<any>>('/users/dashboard-stats');
     return response.data;
   },
 
@@ -136,12 +159,12 @@ export const userService = {
 
   // ================== 🧑‍⚖️ SUPERADMIN ROUTES ==================
   getAllUsers: async (filters: UserFilters = {}): Promise<ApiResponse<{ users: UserProfile[] }>> => {
-    const response = await api.get<ApiResponse<{ users: UserProfile[] }>>('/user/get-users', { params: filters });
+    const response = await api.get<ApiResponse<{ users: UserProfile[] }>>('/users/get-users', { params: filters });
     return response.data;
   },
 
   getAdminStats: async (): Promise<ApiResponse<AdminStats>> => {
-    const response = await api.get<ApiResponse<AdminStats>>('/user/stats');
+    const response = await api.get<ApiResponse<AdminStats>>('/users/stats');
     return response.data;
   },
 

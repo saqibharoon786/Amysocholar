@@ -13,6 +13,7 @@ const {
   getBookById,
   getMyBooks,
   getPendingBooks,
+  getBooksByUploader,
   updateBook,
   deleteBook,
   getBookPreview,
@@ -60,6 +61,7 @@ router.delete("/my/books/:id", isAdmin, deleteBook);
 // ================== 🧑‍⚖️ SUPERADMIN ROUTES ==================
 router.post("/upload-book", isSuperAdmin, uploadFiles, uploadBook);
 router.get("/admin/pending", isSuperAdmin, getPendingBooks);
+router.get("/admin/uploader/:userId", isSuperAdmin, getBooksByUploader);
 router.patch("/admin/:id/approve", isSuperAdmin, approveBook);
 router.patch("/admin/:id/reject", isSuperAdmin, rejectBook);
 

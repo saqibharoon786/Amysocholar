@@ -367,13 +367,12 @@ const BookShop = () => {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      pending: { variant: "secondary" as const, label: "Pending", className: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100" },
-      approved: { variant: "default" as const, label: "Published", className: "bg-green-100 text-green-800 hover:bg-green-100" },
-      rejected: { variant: "destructive" as const, label: "Rejected", className: "bg-red-100 text-red-800 hover:bg-red-100" }
+      pending: { label: "Pending", className: "bg-amber-500/25 text-amber-300 border border-amber-500/50 font-medium" },
+      approved: { label: "Published", className: "bg-emerald-500/25 text-emerald-300 border border-emerald-500/50 font-medium" },
+      rejected: { label: "Rejected", className: "bg-red-500/25 text-red-300 border border-red-500/50 font-medium" }
     };
-
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
-    return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
+    return <Badge variant="outline" className={config.className}>{config.label}</Badge>;
   };
 
   const getFeaturedBadge = (featured: boolean) => {
@@ -404,13 +403,13 @@ const BookShop = () => {
     if (book.discountPercentage && book.discountPercentage > 0) {
       return (
         <div className="flex items-center gap-2">
-          <span className="text-lg font-bold text-green-600">
+          <span className="text-lg font-bold text-emerald-400">
             {currency} {price}
           </span>
-          <span className="text-sm line-through text-gray-500">
+          <span className="text-sm line-through text-slate-400">
             {currency} {book.price}
           </span>
-          <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200 text-xs">
+          <Badge variant="outline" className="border-red-500/50 text-red-300 text-xs">
             -{book.discountPercentage}%
           </Badge>
         </div>
@@ -418,7 +417,7 @@ const BookShop = () => {
     }
 
     return (
-      <span className="text-lg font-bold text-gray-900">
+      <span className="text-lg font-bold text-slate-100">
         {currency} {price}
       </span>
     );
@@ -428,13 +427,13 @@ const BookShop = () => {
   const filteredPendingBooks = getFilteredPendingBooks();
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6 min-h-screen" style={{ backgroundColor: '#0f1729' }}>
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground via-primary to-primary bg-clip-text text-transparent">
+          <h2 className="text-4xl font-bold tracking-tight" style={{ color: '#f1f5f9' }}>
             Book Shop Management
           </h2>
-          <p className="text-muted-foreground">Manage all books in the system</p>
+          <p className="text-sm mt-1" style={{ color: '#94a3b8' }}>Manage all books in the system</p>
         </div>
       </div>
 
@@ -442,24 +441,24 @@ const BookShop = () => {
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-3 h-4 w-4" style={{ color: '#94a3b8' }} />
             <Input
               placeholder="Search books by title, author, or category..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 border-2 focus:border-purple-300 transition-colors"
+              className="pl-10 border-2 bg-slate-800/50 border-slate-600 text-slate-100 placeholder:text-slate-400 focus:border-blue-500 [&>span]:text-slate-100"
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px] border-2">
-              <Filter className="h-4 w-4 mr-2" />
+            <SelectTrigger className="w-[180px] border-2 bg-slate-800/50 border-slate-600 text-slate-100 placeholder:text-slate-400 [&>span]:text-slate-100">
+              <Filter className="h-4 w-4 mr-2" style={{ color: '#94a3b8' }} />
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectContent className="bg-slate-800 border-slate-600 text-slate-100">
+              <SelectItem value="all" className="text-slate-100 focus:bg-slate-700">All Status</SelectItem>
+              <SelectItem value="approved" className="text-slate-100 focus:bg-slate-700">Approved</SelectItem>
+              <SelectItem value="pending" className="text-slate-100 focus:bg-slate-700">Pending</SelectItem>
+              <SelectItem value="rejected" className="text-slate-100 focus:bg-slate-700">Rejected</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -468,20 +467,20 @@ const BookShop = () => {
 
       {/* Tabs for different views */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:w-[400px] bg-muted/50 p-1">
+        <TabsList className="grid w-full grid-cols-2 lg:w-[400px] p-1 bg-slate-800/50 border border-slate-600">
           <TabsTrigger
             value="all"
-            className="data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+            className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-300 transition-all"
           >
             All Books ({showMyBooksOnly ? filteredBooks.length : books.length})
           </TabsTrigger>
           <TabsTrigger
             value="pending"
-            className="data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all"
+            className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-300 transition-all"
           >
             Pending ({showMyBooksOnly ? filteredPendingBooks.length : pendingBooks.length})
             {getMyPendingBooksCount() > 0 && (
-              <Badge variant="secondary" className="ml-2 bg-yellow-100 text-yellow-700">
+              <Badge variant="secondary" className="ml-2 bg-amber-500/25 text-amber-300 border border-amber-500/50 text-xs">
                 {getMyPendingBooksCount()} mine
               </Badge>
             )}
@@ -629,9 +628,9 @@ const BookCard = ({
   getImageAlt,
   handleImageError
 }: any) => (
-  <Card className={`group relative overflow-hidden border-2 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ${getMyBook
-    ? 'border-blue-300 hover:border-blue-400 bg-blue-50/30'
-    : 'border-gray-200 hover:border-purple-300'
+  <Card className={`group relative overflow-visible border-2 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ${getMyBook
+    ? 'border-slate-500 bg-slate-800/90 hover:border-blue-500/50'
+    : 'border-slate-600 bg-slate-800/90 hover:border-slate-500'
     }`}>
     {/* Badge Container */}
     <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
@@ -646,7 +645,7 @@ const BookCard = ({
       </div>
     </div>
 
-    <CardHeader className="p-0 relative">
+    <CardHeader className="p-0 relative overflow-hidden rounded-t-lg">
       <div className="relative overflow-hidden">
         <img
           src={getCurrentImage(book)}
@@ -656,51 +655,45 @@ const BookCard = ({
           crossOrigin="anonymous"
           loading="lazy"
         />
-        <div className={`absolute inset-0 transition-colors duration-300 ${getMyBook
-          ? 'bg-blue-500/0 group-hover:bg-blue-500/10'
-          : 'bg-black/0 group-hover:bg-black/10'
-          }`} />
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
       </div>
     </CardHeader>
 
-    <CardContent className="p-4 space-y-3">
-      <CardTitle className={`text-lg leading-tight line-clamp-2 transition-colors ${getMyBook
-        ? 'group-hover:text-blue-600'
-        : 'group-hover:text-purple-600'
-        }`}>
+    <CardContent className="p-4 pt-4 space-y-3 overflow-visible">
+      <CardTitle className="text-lg leading-snug line-clamp-2 text-slate-100 min-h-[2.5rem] pt-0">
         {book.title}
       </CardTitle>
 
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <User className="h-3 w-3" />
-        <span className="line-clamp-1">{book.author}</span>
+      <div className="flex items-center gap-2 text-sm text-slate-400">
+        <User className="h-3 w-3 flex-shrink-0" />
+        <span className="line-clamp-1 text-slate-300">{book.author}</span>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between text-slate-200">
         {formatPrice(book)}
       </div>
 
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
+      <div className="flex items-center justify-between text-xs text-slate-400">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1">
             <Eye className="h-3 w-3" />
-            <span>{book.viewCount || 0}</span>
+            <span className="text-slate-300">{book.viewCount || 0}</span>
           </div>
           <div className="flex items-center gap-1">
             <Download className="h-3 w-3" />
-            <span>{book.downloadCount || 0}</span>
+            <span className="text-slate-300">{book.downloadCount || 0}</span>
           </div>
         </div>
-        <Badge variant="outline" className="text-xs">
+        <Badge variant="outline" className="text-xs border-slate-500 text-slate-300">
           {book.category}
         </Badge>
       </div>
 
       {book.uploader && (
-        <div className="text-xs text-muted-foreground border-t pt-2">
-          Uploaded by: {book.uploader.firstName} {book.uploader.lastName}
+        <div className="text-xs text-slate-400 border-t border-slate-600 pt-2">
+          Uploaded by: <span className="text-slate-300">{book.uploader.firstName} {book.uploader.lastName}</span>
           {getMyBook && (
-            <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-700 text-xs">
+            <Badge variant="outline" className="ml-2 border-blue-500/50 text-blue-300 text-xs">
               You
             </Badge>
           )}
@@ -708,12 +701,12 @@ const BookCard = ({
       )}
     </CardContent>
 
-    <CardFooter className="p-4 pt-0 flex gap-2">
+    <CardFooter className="p-4 pt-0 flex gap-2 border-t border-slate-600">
       <Button
         variant="outline"
         size="sm"
         onClick={() => onPreview(book)}
-        className="flex-1 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+        className="flex-1 border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white"
       >
         <Eye className="h-4 w-4" />
       </Button>
@@ -721,10 +714,7 @@ const BookCard = ({
         variant="outline"
         size="sm"
         onClick={() => onEdit(book)}
-        className={`flex-1 transition-colors ${getMyBook
-          ? 'hover:bg-green-50 hover:text-green-600 border-green-200'
-          : 'hover:bg-green-50 hover:text-green-600'
-          }`}
+        className="flex-1 border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white"
       >
         <Edit className="h-4 w-4" />
       </Button>
@@ -732,10 +722,7 @@ const BookCard = ({
         variant="outline"
         size="sm"
         onClick={() => onDelete(book)}
-        className={`flex-1 transition-colors ${getMyBook
-          ? 'hover:bg-red-50 hover:text-red-600 border-red-200'
-          : 'hover:bg-red-50 hover:text-red-600'
-          }`}
+        className="flex-1 border-slate-500 text-slate-200 hover:bg-red-900/30 hover:text-red-300"
       >
         <Trash2 className="h-4 w-4" />
       </Button>
@@ -756,9 +743,9 @@ const PendingBookCard = ({
   getImageAlt,
   handleImageError
 }: any) => (
-  <Card className={`group relative overflow-hidden border-2 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ${getMyBook
-    ? 'border-blue-300 hover:border-blue-400 bg-blue-50/30'
-    : 'border-yellow-200 hover:border-yellow-300 bg-yellow-50/30'
+  <Card className={`group relative overflow-visible border-2 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ${getMyBook
+    ? 'border-slate-500 bg-slate-800/90 hover:border-blue-500/50'
+    : 'border-slate-600 bg-slate-800/90 hover:border-slate-500'
     }`}>
     {/* Badge Container */}
     <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
@@ -766,12 +753,12 @@ const PendingBookCard = ({
         {getStatusBadge(book.status || "pending")}
         {getMyBookBadge(book)}
       </div>
-      <Badge className={`${getMyBook ? 'bg-blue-500' : 'bg-yellow-500'} text-white border-0`}>
+      <Badge className="bg-amber-600 text-white border-0">
         Awaiting Review
       </Badge>
     </div>
 
-    <CardHeader className="p-0 relative">
+    <CardHeader className="p-0 relative overflow-hidden rounded-t-lg">
       <div className="relative overflow-hidden">
         <img
           src={getCurrentImage(book)}
@@ -781,46 +768,40 @@ const PendingBookCard = ({
           crossOrigin="anonymous"
           loading="lazy"
         />
-        <div className={`absolute inset-0 transition-colors duration-300 ${getMyBook
-          ? 'bg-blue-500/0 group-hover:bg-blue-500/10'
-          : 'bg-yellow-500/0 group-hover:bg-yellow-500/10'
-          }`} />
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
       </div>
     </CardHeader>
 
-    <CardContent className="p-4 space-y-3">
-      <CardTitle className={`text-lg leading-tight line-clamp-2 transition-colors ${getMyBook
-        ? 'group-hover:text-blue-600'
-        : 'group-hover:text-yellow-600'
-        }`}>
+    <CardContent className="p-4 pt-4 space-y-3 overflow-visible">
+      <CardTitle className="text-lg leading-snug line-clamp-2 text-slate-100 min-h-[2.5rem] pt-0">
         {book.title}
       </CardTitle>
 
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <User className="h-3 w-3" />
-        <span className="line-clamp-1">{book.author}</span>
+      <div className="flex items-center gap-2 text-sm text-slate-400">
+        <User className="h-3 w-3 flex-shrink-0" />
+        <span className="line-clamp-1 text-slate-300">{book.author}</span>
       </div>
 
       <div className="space-y-2 text-sm">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Price:</span>
-          <span className={`font-bold ${getMyBook ? 'text-blue-600' : 'text-yellow-600'}`}>
+        <div className="flex justify-between text-slate-300">
+          <span className="text-slate-400">Price:</span>
+          <span className="font-bold text-slate-100">
             {book.currency} {book.price}
           </span>
         </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Uploaded:</span>
-          <span className="text-xs">
+        <div className="flex justify-between text-slate-300">
+          <span className="text-slate-400">Uploaded:</span>
+          <span className="text-xs text-slate-300">
             {new Date(book.createdAt || "").toLocaleDateString()}
           </span>
         </div>
       </div>
 
       {book.uploader && (
-        <div className="text-xs text-muted-foreground border-t pt-2">
-          Uploaded by: {book.uploader.firstName} {book.uploader.lastName}
+        <div className="text-xs text-slate-400 border-t border-slate-600 pt-2">
+          Uploaded by: <span className="text-slate-300">{book.uploader.firstName} {book.uploader.lastName}</span>
           {getMyBook && (
-            <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-700 text-xs">
+            <Badge variant="outline" className="ml-2 border-blue-500/50 text-blue-300 text-xs">
               You
             </Badge>
           )}
@@ -828,27 +809,27 @@ const PendingBookCard = ({
       )}
     </CardContent>
 
-    <CardFooter className="p-4 pt-0 flex gap-2">
+    <CardFooter className="p-4 pt-0 flex gap-2 border-t border-slate-600">
       <Button
         variant="outline"
         size="sm"
         onClick={() => onPreview(book)}
-        className="flex-1 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+        className="flex-1 border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white"
       >
         <Eye className="h-4 w-4" />
       </Button>
       <Button
         size="sm"
         onClick={() => onApprove(book)}
-        className="flex-1 bg-green-600 hover:bg-green-700 text-white transition-colors"
+        className="flex-1 bg-green-600 hover:bg-green-700 text-white"
       >
         <CheckCircle className="h-4 w-4" />
       </Button>
       <Button
-        variant="destructive"
+        variant="outline"
         size="sm"
         onClick={() => onReject(book)}
-        className="flex-1"
+        className="flex-1 border-red-500/50 text-red-300 hover:bg-red-900/30"
       >
         <XCircle className="h-4 w-4" />
       </Button>
@@ -859,13 +840,13 @@ const PendingBookCard = ({
 // Empty State Component
 const EmptyState = ({ showMyBooksOnly, onClearFilters }: any) => (
   <div className="text-center py-12 space-y-4">
-    <div className="w-24 h-24 mx-auto bg-muted rounded-full flex items-center justify-center">
-      <Search className="h-8 w-8 text-muted-foreground" />
+    <div className="w-24 h-24 mx-auto bg-slate-700 rounded-full flex items-center justify-center">
+      <Search className="h-8 w-8 text-slate-400" />
     </div>
-    <p className="text-muted-foreground">
+    <p className="text-slate-300">
       {showMyBooksOnly ? "No books found in your collection" : "No books found"}
     </p>
-    <Button variant="outline" onClick={onClearFilters}>
+    <Button variant="outline" onClick={onClearFilters} className="border-slate-500 text-slate-200 hover:bg-slate-700">
       Clear filters
     </Button>
   </div>
@@ -874,17 +855,16 @@ const EmptyState = ({ showMyBooksOnly, onClearFilters }: any) => (
 // Pending Empty State Component
 const PendingEmptyState = ({ showMyBooksOnly }: any) => (
   <div className="text-center py-12 space-y-4">
-    <div className={`w-24 h-24 mx-auto rounded-full flex items-center justify-center ${showMyBooksOnly ? 'bg-blue-50' : 'bg-yellow-50'
-      }`}>
-      <CheckCircle className={`h-8 w-8 ${showMyBooksOnly ? 'text-blue-500' : 'text-yellow-500'}`} />
+    <div className="w-24 h-24 mx-auto rounded-full flex items-center justify-center bg-slate-700">
+      <CheckCircle className="h-8 w-8 text-amber-400" />
     </div>
-    <p className="text-muted-foreground">
+    <p className="text-slate-300">
       {showMyBooksOnly
         ? "No pending books found in your collection"
         : "No pending books for approval"
       }
     </p>
-    <p className="text-sm text-muted-foreground">
+    <p className="text-sm text-slate-400">
       {showMyBooksOnly
         ? "All your books have been reviewed"
         : "All books have been reviewed"
@@ -893,16 +873,16 @@ const PendingEmptyState = ({ showMyBooksOnly }: any) => (
   </div>
 );
 
-// Edit Book Dialog Component
+// Edit Book Dialog Component - dark theme
 const EditBookDialog = ({ open, onOpenChange, selectedBook, editForm, setEditForm, onSave }: any) => (
   <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-800 border-slate-600 text-slate-100">
       <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
-          <Edit className="h-5 w-5" />
+        <DialogTitle className="flex items-center gap-2 text-slate-100">
+          <Edit className="h-5 w-5 text-slate-300" />
           Edit Book - {selectedBook?.title}
         </DialogTitle>
-        <DialogDescription>
+        <DialogDescription className="text-slate-400">
           Update the book information below. Click save when you're done.
         </DialogDescription>
       </DialogHeader>
@@ -1091,33 +1071,33 @@ const EditBookDialog = ({ open, onOpenChange, selectedBook, editForm, setEditFor
         </div>
       </div>
       <DialogFooter>
-        <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <Button variant="outline" onClick={() => onOpenChange(false)} className="border-slate-500 text-slate-200 hover:bg-slate-700">
           Cancel
         </Button>
-        <Button onClick={onSave}>Save Changes</Button>
+        <Button onClick={onSave} className="bg-slate-600 hover:bg-slate-500 text-white">Save Changes</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>
 );
 
-// Delete Dialog Component
+// Delete Dialog Component - dark theme
 const DeleteDialog = ({ open, onOpenChange, selectedBook, onConfirm }: any) => (
   <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent>
+    <DialogContent className="bg-slate-800 border-slate-600 text-slate-100">
       <DialogHeader>
-        <DialogTitle className="flex items-center gap-2 text-red-600">
+        <DialogTitle className="flex items-center gap-2 text-red-400">
           <Trash2 className="h-5 w-5" />
           Delete Book
         </DialogTitle>
-        <DialogDescription>
+        <DialogDescription className="text-slate-400">
           Are you sure you want to delete "{selectedBook?.title}"? This action cannot be undone.
         </DialogDescription>
       </DialogHeader>
       <DialogFooter>
-        <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <Button variant="outline" onClick={() => onOpenChange(false)} className="border-slate-500 text-slate-200 hover:bg-slate-700">
           Cancel
         </Button>
-        <Button variant="destructive" onClick={onConfirm}>
+        <Button variant="destructive" onClick={onConfirm} className="bg-red-600 hover:bg-red-700 text-white">
           Delete
         </Button>
       </DialogFooter>
@@ -1125,16 +1105,16 @@ const DeleteDialog = ({ open, onOpenChange, selectedBook, onConfirm }: any) => (
   </Dialog>
 );
 
-// Reject Dialog Component
+// Reject Dialog Component - dark theme
 const RejectDialog = ({ open, onOpenChange, selectedBook, rejectionReason, setRejectionReason, onConfirm }: any) => (
   <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent>
+    <DialogContent className="bg-slate-800 border-slate-600 text-slate-100">
       <DialogHeader>
-        <DialogTitle className="flex items-center gap-2 text-red-600">
+        <DialogTitle className="flex items-center gap-2 text-red-400">
           <XCircle className="h-5 w-5" />
           Reject Book
         </DialogTitle>
-        <DialogDescription>
+        <DialogDescription className="text-slate-400">
           Please provide a reason for rejecting "{selectedBook?.title}".
         </DialogDescription>
       </DialogHeader>
@@ -1144,17 +1124,18 @@ const RejectDialog = ({ open, onOpenChange, selectedBook, rejectionReason, setRe
           value={rejectionReason}
           onChange={(e) => setRejectionReason(e.target.value)}
           rows={3}
-          className="border-2 focus:border-red-300"
+          className="border-slate-500 bg-slate-700 text-slate-100 placeholder:text-slate-400 focus:border-red-400"
         />
       </div>
       <DialogFooter>
-        <Button variant="outline" onClick={() => onOpenChange(false)}>
+        <Button variant="outline" onClick={() => onOpenChange(false)} className="border-slate-500 text-slate-200 hover:bg-slate-700">
           Cancel
         </Button>
         <Button
           variant="destructive"
           onClick={onConfirm}
           disabled={!rejectionReason.trim()}
+          className="bg-red-600 hover:bg-red-700 text-white"
         >
           Reject Book
         </Button>
@@ -1163,7 +1144,7 @@ const RejectDialog = ({ open, onOpenChange, selectedBook, rejectionReason, setRe
   </Dialog>
 );
 
-// Preview Dialog Component
+// Preview Dialog Component - dark theme to match book shop
 const PreviewDialog = ({
   open,
   onOpenChange,
@@ -1178,13 +1159,13 @@ const PreviewDialog = ({
   handleImageError
 }: any) => (
   <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="max-w-4xl">
+    <DialogContent className="max-w-4xl bg-slate-800 border-slate-600 text-slate-100">
       <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
-          <Eye className="h-5 w-5" />
+        <DialogTitle className="flex items-center gap-2 text-slate-100">
+          <Eye className="h-5 w-5 text-slate-300" />
           {selectedBook?.title}
         </DialogTitle>
-        <DialogDescription>
+        <DialogDescription className="text-slate-400">
           by {selectedBook?.author}
         </DialogDescription>
       </DialogHeader>
@@ -1194,7 +1175,7 @@ const PreviewDialog = ({
             <img
               src={selectedBook ? getCurrentImage(selectedBook) : "/placeholder-book.png"}
               alt={selectedBook ? getImageAlt(selectedBook) : "Book Cover"}
-              className="w-48 h-64 object-cover rounded-lg shadow-lg"
+              className="w-48 h-64 object-cover rounded-lg shadow-lg border border-slate-600"
               onError={(e) => selectedBook && handleImageError(e, selectedBook)}
               crossOrigin="anonymous"
               loading="lazy"
@@ -1207,55 +1188,55 @@ const PreviewDialog = ({
               {getBestsellerBadge(selectedBook?.bestseller || false)}
               {getNewReleaseBadge(selectedBook?.newRelease || false)}
               {selectedBook && getMyBook(selectedBook) && (
-                <Badge className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white border-0">
+                <Badge className="bg-indigo-600 text-white border-0">
                   <BookOpen className="h-3 w-3 mr-1" />
                   My Book
                 </Badge>
               )}
             </div>
 
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-sm text-slate-300 leading-relaxed">
               {selectedBook?.description}
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
-                <h4 className="font-semibold mb-2">Book Details</h4>
-                <div className="space-y-1">
+                <h4 className="font-semibold mb-2 text-slate-100">Book Details</h4>
+                <div className="space-y-1 text-slate-300">
                   <div className="flex justify-between">
-                    <span>Category:</span>
+                    <span className="text-slate-400">Category:</span>
                     <span>{selectedBook?.category}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Language:</span>
+                    <span className="text-slate-400">Language:</span>
                     <span>{selectedBook?.language}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Pages:</span>
+                    <span className="text-slate-400">Pages:</span>
                     <span>{selectedBook?.totalPages}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Publisher:</span>
+                    <span className="text-slate-400">Publisher:</span>
                     <span>{selectedBook?.publisher}</span>
                   </div>
                 </div>
               </div>
               <div>
-                <h4 className="font-semibold mb-2">Pricing</h4>
-                <div className="space-y-1">
+                <h4 className="font-semibold mb-2 text-slate-100">Pricing</h4>
+                <div className="space-y-1 text-slate-300">
                   <div className="flex justify-between">
-                    <span>Price:</span>
+                    <span className="text-slate-400">Price:</span>
                     <span>{selectedBook?.currency} {selectedBook?.price}</span>
                   </div>
                   {selectedBook?.discountPercentage > 0 && (
                     <>
                       <div className="flex justify-between">
-                        <span>Discount:</span>
-                        <span className="text-green-600">-{selectedBook.discountPercentage}%</span>
+                        <span className="text-slate-400">Discount:</span>
+                        <span className="text-emerald-400">-{selectedBook.discountPercentage}%</span>
                       </div>
                       <div className="flex justify-between font-bold">
-                        <span>Final Price:</span>
-                        <span className="text-green-600">
+                        <span className="text-slate-400">Final Price:</span>
+                        <span className="text-emerald-400">
                           {selectedBook.currency} {selectedBook.discountedPrice || selectedBook.price}
                         </span>
                       </div>
@@ -1266,22 +1247,22 @@ const PreviewDialog = ({
             </div>
 
             {selectedBook?.uploader && (
-              <div className="border-t pt-4">
-                <h4 className="font-semibold mb-2">Upload Information</h4>
-                <div className="text-sm">
+              <div className="border-t border-slate-600 pt-4">
+                <h4 className="font-semibold mb-2 text-slate-100">Upload Information</h4>
+                <div className="text-sm text-slate-300">
                   <div className="flex justify-between">
-                    <span>Uploaded by:</span>
+                    <span className="text-slate-400">Uploaded by:</span>
                     <span>
                       {selectedBook.uploader.firstName} {selectedBook.uploader.lastName}
                       {getMyBook(selectedBook) && (
-                        <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-700 text-xs">
+                        <Badge variant="outline" className="ml-2 border-blue-500/50 text-blue-300 text-xs">
                           You
                         </Badge>
                       )}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Uploaded on:</span>
+                    <span className="text-slate-400">Uploaded on:</span>
                     <span>{new Date(selectedBook.createdAt || "").toLocaleDateString()}</span>
                   </div>
                 </div>

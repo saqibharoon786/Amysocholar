@@ -67,13 +67,20 @@ export const purchaseService = {
   },
 
   getAllPurchases: async (filters: PurchaseFilters = {}): Promise<ApiResponse<{ purchases: Purchase[] }>> => {
-    const response = await api.get<ApiResponse<{ purchases: Purchase[] }>>('/purchase', { params: filters });
+    const response = await api.get<ApiResponse<{ purchases: Purchase[] }>>('/purchase/all', { params: filters });
     return response.data;
   },
 
   getUserPurchases: async (type?: 'book' | 'judgment', format?: 'pdf' | 'text', page: number = 1, limit: number = 10): Promise<ApiResponse<{ purchases: Purchase[] }>> => {
     const response = await api.get<ApiResponse<{ purchases: Purchase[] }>>('/purchase/my-purchases', {
       params: { type, format, page, limit }
+    });
+    return response.data;
+  },
+
+  getPurchasesByUserId: async (userId: string, params: { page?: number; limit?: number; type?: string; paymentStatus?: string } = {}): Promise<ApiResponse<{ purchases: Purchase[] }>> => {
+    const response = await api.get<ApiResponse<{ purchases: Purchase[] }>>('/purchase/all', {
+      params: { userId, ...params }
     });
     return response.data;
   },

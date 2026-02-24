@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { userService } from "@/services/userService";
 import { 
   BookOpen, 
   ShoppingCart, 
@@ -31,17 +33,42 @@ import {
 } from "lucide-react";
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [activeView, setActiveView] = useState<'cards' | 'graphs'>('cards');
   const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<'month' | 'quarter' | 'year'>('year');
   const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState<{
+    totalUsers?: number;
+    totalAdmins?: number;
+    totalCustomers?: number;
+    pendingVerifications?: number;
+    totalBooks?: number;
+    totalRevenue?: number;
+    totalOrders?: number;
+    pendingBooks?: number;
+  } | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true);
+      try {
+        const res = await userService.getDashboardStats();
+        if (res.success && res.data) setDashboardData(res.data);
+      } catch {
+        setDashboardData(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (user?.role === 'admin' || user?.role === 'superadmin') fetchStats();
+    else setLoading(false);
+  }, [user?.role]);
 
   // Navy Blue Color Scheme
   const colors = {
@@ -67,61 +94,28 @@ const Dashboard = () => {
     }
   };
 
-  // Enhanced stats data with navy blue theme
-  const stats = [
-    { 
-      id: 'total-books',
-      title: "Total Books", 
-      value: "1,234", 
-      icon: BookOpen, 
-      color: colors.accentLight,
-      bgColor: colors.accent,
-      change: "+12%",
-      trend: "up",
-      description: "Across all categories",
-      revenue: "₹2,45,670",
-      gradient: colors.gradients.blue
-    },
-    { 
-      id: 'total-orders',
-      title: "Total Orders", 
-      value: "567", 
-      icon: ShoppingCart, 
-      color: colors.success,
-      bgColor: '#059669',
-      change: "+8%",
-      trend: "up",
-      description: "This month",
-      revenue: "₹1,89,450",
-      gradient: colors.gradients.green
-    },
-    { 
-      id: 'uploaded-today',
-      title: "Uploaded Today", 
-      value: "12", 
-      icon: Upload, 
-      color: colors.info,
-      bgColor: '#7C3AED',
-      change: "+23%",
-      trend: "up",
-      description: "New additions",
-      revenue: "₹45,230",
-      gradient: colors.gradients.purple
-    },
-    { 
-      id: 'active-users',
-      title: "Active Users", 
-      value: "890", 
-      icon: Users, 
-      color: colors.warning,
-      bgColor: '#D97706',
-      change: "+5%",
-      trend: "up",
-      description: "Currently online",
-      revenue: "₹3,12,890",
-      gradient: colors.gradients.orange
-    },
-  ];
+  // Real dashboard stats from API
+  const isSuperAdmin = user?.role === 'superadmin';
+  const stats = isSuperAdmin && dashboardData
+    ? [
+        { id: 'total-users', title: "Total Users", value: String(dashboardData.totalUsers ?? 0), icon: Users, color: colors.accentLight, bgColor: colors.accent, description: "All registered users", gradient: colors.gradients.blue, trend: 'up' as const, change: '', revenue: '' },
+        { id: 'total-books', title: "Total Books", value: String(dashboardData.totalBooks ?? 0), icon: BookOpen, color: colors.success, bgColor: '#059669', description: "Across all categories", gradient: colors.gradients.green, trend: 'up' as const, change: '', revenue: '' },
+        { id: 'total-orders', title: "Total Orders", value: String(dashboardData.totalOrders ?? 0), icon: ShoppingCart, color: colors.info, bgColor: '#7C3AED', description: "Completed purchases", gradient: colors.gradients.purple, trend: 'up' as const, change: '', revenue: `PKR ${(dashboardData.totalRevenue ?? 0).toLocaleString()}` },
+        { id: 'total-revenue', title: "Total Revenue", value: `PKR ${(dashboardData.totalRevenue ?? 0).toLocaleString()}`, icon: DollarSign, color: colors.warning, bgColor: '#D97706', description: "From completed orders", gradient: colors.gradients.orange, trend: 'up' as const, change: '', revenue: '' },
+      ]
+    : !isSuperAdmin && dashboardData
+    ? [
+        { id: 'total-books', title: "My Books", value: String(dashboardData.totalBooks ?? 0), icon: BookOpen, color: colors.accentLight, bgColor: colors.accent, description: "Books you uploaded", gradient: colors.gradients.blue, trend: 'up' as const, change: '', revenue: '' },
+        { id: 'pending-books', title: "Pending", value: String(dashboardData.pendingBooks ?? 0), icon: Upload, color: colors.warning, bgColor: '#D97706', description: "Awaiting approval", gradient: colors.gradients.orange, trend: 'up' as const, change: '', revenue: '' },
+        { id: 'placeholder2', title: "—", value: "—", icon: BarChart3, color: colors.text.muted, bgColor: '#334155', description: "—", gradient: colors.gradients.dark, trend: 'up' as const, change: '', revenue: '' },
+        { id: 'placeholder3', title: "—", value: "—", icon: Activity, color: colors.text.muted, bgColor: '#334155', description: "—", gradient: colors.gradients.dark, trend: 'up' as const, change: '', revenue: '' },
+      ]
+    : [
+        { id: 'total-books', title: "Total Books", value: "—", icon: BookOpen, color: colors.accentLight, bgColor: colors.accent, description: "Loading...", gradient: colors.gradients.blue, trend: 'up' as const, change: '', revenue: '' },
+        { id: 'total-orders', title: "Total Orders", value: "—", icon: ShoppingCart, color: colors.success, bgColor: '#059669', description: "Loading...", gradient: colors.gradients.green, trend: 'up' as const, change: '', revenue: '' },
+        { id: 'uploaded', title: "Uploaded", value: "—", icon: Upload, color: colors.info, bgColor: '#7C3AED', description: "Loading...", gradient: colors.gradients.purple, trend: 'up' as const, change: '', revenue: '' },
+        { id: 'users', title: "Users", value: "—", icon: Users, color: colors.warning, bgColor: '#D97706', description: "Loading...", gradient: colors.gradients.orange, trend: 'up' as const, change: '', revenue: '' },
+      ];
 
   // Enhanced sales data with realistic numbers
   const salesData = {

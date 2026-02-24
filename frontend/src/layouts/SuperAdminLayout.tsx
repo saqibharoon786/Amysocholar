@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Gavel,
   Users,
+  FolderPlus,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -23,6 +24,8 @@ const SuperAdminLayout = () => {
 
   const navItems = [
     { name: "Dashboard", href: "/superadmin/dashboard", icon: LayoutDashboard },
+    { name: "Users", href: "/superadmin/users", icon: Users },
+    { name: "Categories", href: "/superadmin/categories", icon: FolderPlus },
     { name: "Upload Book", href: "/superadmin/upload", icon: Upload },
     { name: "Upload Judgment", href: "/superadmin/upload-judgment", icon: Gavel },
     { name: "Book Shop", href: "/superadmin/shop", icon: ShoppingCart },
@@ -48,25 +51,22 @@ const SuperAdminLayout = () => {
       >
         {/* Logo/Header Section */}
         <div className="p-5 border-b" style={{ borderColor: 'rgba(100, 116, 139, 0.15)' }}>
-          <div className="flex items-center gap-3">
-            <div 
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{ 
-                backgroundColor: '#2d3748',
-                border: '1px solid rgba(100, 116, 139, 0.2)'
-              }}
-            >
-              <BookOpen className="h-5 w-5" style={{ color: '#94a3b8' }} />
-            </div>
+          <Link to="/superadmin/dashboard" className="flex items-center gap-3">
+            <img
+              src="/logo.png"
+              alt="AMY ScholarNest"
+              className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+              style={{ border: '1px solid rgba(100, 116, 139, 0.2)' }}
+            />
             <div>
               <div className="font-bold text-lg tracking-tight" style={{ color: '#f1f5f9' }}>
-                LawBooks Pro
+                AMY ScholarNest
               </div>
               <div className="text-xs" style={{ color: '#94a3b8' }}>
                 Super Admin Panel
               </div>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* User Profile Section */}

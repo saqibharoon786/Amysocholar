@@ -1,6 +1,7 @@
 // components/upload-book/UploadForm.tsx
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { categoryService } from "@/services/categoryService";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,14 +60,17 @@ interface UploadFormProps {
 const LANGUAGES = ["English", "Urdu", "Arabic", "French", "German", "Spanish"];
 const CURRENCIES = ["PKR", "USD", "EUR", "GBP"];
 const TEXT_FORMATS = ["plain", "html", "markdown"];
-const CATEGORIES = [
-  "Law Books", "Academic", "Reference", "Fiction",
-  "Non-Fiction", "Science", "Technology", "History",
-  "Biography", "Self-Help", "Business", "Religion"
-];
 
 const UploadForm = ({ isOpen, isLoading, onSubmit, onCancel, userRole }: UploadFormProps) => {
   const navigate = useNavigate();
+  const [categories, setCategories] = useState<string[]>([]);
+  useEffect(() => {
+    if (isOpen) {
+      categoryService.getCategories().then((res) => {
+        if (res.success && res.data) setCategories(res.data);
+      });
+    }
+  }, [isOpen]);
 
   // Navy Blue Color Scheme
   const colors = {
@@ -501,15 +505,15 @@ const UploadForm = ({ isOpen, isLoading, onSubmit, onCancel, userRole }: UploadF
                         value={formData.category}
                         onValueChange={(v) => handleInputChange('category', v)}
                       >
-                        <SelectTrigger className="h-12 text-lg transition-all duration-300 rounded-xl bg-slate-800/50 border border-slate-700 text-white focus:border-blue-500 focus:ring-blue-500/20">
+                        <SelectTrigger className="h-12 text-lg transition-all duration-300 rounded-xl bg-slate-800/50 border border-slate-700 text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20 [&>span]:text-slate-100">
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
-                        <SelectContent className="bg-slate-800 border border-slate-700">
-                          {CATEGORIES.map(cat => (
+                        <SelectContent className="bg-slate-800 border border-slate-700 text-slate-100">
+                          {categories.map((cat) => (
                             <SelectItem
                               key={cat}
                               value={cat}
-                              className="text-lg py-3 text-white hover:bg-slate-700"
+                              className="text-lg py-3 text-slate-100 focus:bg-slate-700 focus:text-white"
                             >
                               {cat}
                             </SelectItem>
@@ -567,8 +571,8 @@ const UploadForm = ({ isOpen, isLoading, onSubmit, onCancel, userRole }: UploadF
                   <Button
                     type="button"
                     onClick={() => setActiveSection(2)}
-                    style={{ background: colors.gradients.blue }}
-                    className="text-white hover:opacity-90 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl"
+                    style={{ background: colors.gradients.blue, color: '#ffffff' }}
+                    className="bg-blue-600 text-white hover:opacity-90 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl border-0"
                   >
                     Next: Publishing Details
                   </Button>
@@ -669,15 +673,15 @@ const UploadForm = ({ isOpen, isLoading, onSubmit, onCancel, userRole }: UploadF
                           Language *
                         </Label>
                         <Select value={formData.language} onValueChange={(v) => handleInputChange('language', v)}>
-                          <SelectTrigger className="h-12 text-lg transition-all duration-300 rounded-xl bg-slate-800/50 border border-slate-700 text-white focus:border-blue-500 focus:ring-blue-500/20">
+                          <SelectTrigger className="h-12 text-lg transition-all duration-300 rounded-xl bg-slate-800/50 border border-slate-700 text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20 [&>span]:text-slate-100">
                             <SelectValue placeholder="Select language" />
                           </SelectTrigger>
-                          <SelectContent className="bg-slate-800 border border-slate-700">
-                            {LANGUAGES.map(lang => (
+                          <SelectContent className="bg-slate-800 border border-slate-700 text-slate-100">
+                            {LANGUAGES.map((lang) => (
                               <SelectItem
                                 key={lang}
                                 value={lang}
-                                className="text-lg py-3 text-white hover:bg-slate-700"
+                                className="text-lg py-3 text-slate-100 focus:bg-slate-700 focus:text-white"
                               >
                                 {lang}
                               </SelectItem>
@@ -724,15 +728,15 @@ const UploadForm = ({ isOpen, isLoading, onSubmit, onCancel, userRole }: UploadF
                     type="button"
                     variant="outline"
                     onClick={() => setActiveSection(1)}
-                    className="border-slate-700 text-white hover:bg-slate-800 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl"
+                    className="border-2 border-slate-500 bg-slate-800/50 text-slate-100 hover:bg-slate-700 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl"
                   >
                     Previous
                   </Button>
                   <Button
                     type="button"
                     onClick={() => setActiveSection(3)}
-                    style={{ background: colors.gradients.blue }}
-                    className="text-white hover:opacity-90 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl"
+                    style={{ background: colors.gradients.blue, color: '#ffffff' }}
+                    className="bg-blue-600 text-white hover:opacity-90 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl border-0"
                   >
                     Next: Pricing Information
                   </Button>
@@ -785,15 +789,15 @@ const UploadForm = ({ isOpen, isLoading, onSubmit, onCancel, userRole }: UploadF
                       Currency
                     </Label>
                     <Select value={formData.currency} onValueChange={(v) => handleInputChange('currency', v)}>
-                      <SelectTrigger className="h-12 text-lg transition-all duration-300 rounded-xl bg-slate-800/50 border border-slate-700 text-white focus:border-blue-500 focus:ring-blue-500/20">
+                      <SelectTrigger className="h-12 text-lg transition-all duration-300 rounded-xl bg-slate-800/50 border border-slate-700 text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20 [&>span]:text-slate-100">
                         <SelectValue placeholder="Select currency" />
                       </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border border-slate-700">
-                        {CURRENCIES.map(currency => (
+                      <SelectContent className="bg-slate-800 border border-slate-700 text-slate-100">
+                        {CURRENCIES.map((currency) => (
                           <SelectItem
                             key={currency}
                             value={currency}
-                            className="text-lg py-3 text-white hover:bg-slate-700"
+                            className="text-lg py-3 text-slate-100 focus:bg-slate-700 focus:text-white"
                           >
                             {currency}
                           </SelectItem>
@@ -827,15 +831,15 @@ const UploadForm = ({ isOpen, isLoading, onSubmit, onCancel, userRole }: UploadF
                     type="button"
                     variant="outline"
                     onClick={() => setActiveSection(2)}
-                    className="border-slate-700 text-white hover:bg-slate-800 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl"
+                    className="border-2 border-slate-500 bg-slate-800/50 text-slate-100 hover:bg-slate-700 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl"
                   >
                     Previous
                   </Button>
                   <Button
                     type="button"
                     onClick={() => setActiveSection(4)}
-                    style={{ background: colors.gradients.blue }}
-                    className="text-white hover:opacity-90 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl"
+                    style={{ background: colors.gradients.blue, color: '#ffffff' }}
+                    className="bg-blue-600 text-white hover:opacity-90 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl border-0"
                   >
                     Next: Media & Files
                   </Button>
@@ -1051,15 +1055,15 @@ const UploadForm = ({ isOpen, isLoading, onSubmit, onCancel, userRole }: UploadF
                     type="button"
                     variant="outline"
                     onClick={() => setActiveSection(3)}
-                    className="border-slate-700 text-white hover:bg-slate-800 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl"
+                    className="border-2 border-slate-500 bg-slate-800/50 text-slate-100 hover:bg-slate-700 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl"
                   >
                     Previous
                   </Button>
                   <Button
                     type="button"
                     onClick={() => setActiveSection(5)}
-                    style={{ background: colors.gradients.blue }}
-                    className="text-white hover:opacity-90 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl"
+                    style={{ background: colors.gradients.blue, color: '#ffffff' }}
+                    className="bg-blue-600 text-white hover:opacity-90 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl border-0"
                   >
                     Next: Additional Info
                   </Button>
@@ -1125,15 +1129,15 @@ const UploadForm = ({ isOpen, isLoading, onSubmit, onCancel, userRole }: UploadF
                     </Label>
 
                     <Select value={formData.textFormat} onValueChange={(v: "plain" | "html" | "markdown") => handleInputChange('textFormat', v)}>
-                      <SelectTrigger className="w-32 h-9 bg-slate-800/50 border border-slate-700 text-white">
+                      <SelectTrigger className="w-32 h-9 bg-slate-800/50 border border-slate-700 text-slate-100 placeholder:text-slate-400 [&>span]:text-slate-100">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-slate-800 border border-slate-700">
-                        {TEXT_FORMATS.map(format => (
+                      <SelectContent className="bg-slate-800 border border-slate-700 text-slate-100">
+                        {TEXT_FORMATS.map((format) => (
                           <SelectItem
                             key={format}
                             value={format}
-                            className="text-white hover:bg-slate-700"
+                            className="text-slate-100 focus:bg-slate-700 focus:text-white"
                           >
                             {format.toUpperCase()}
                           </SelectItem>
@@ -1208,7 +1212,7 @@ const UploadForm = ({ isOpen, isLoading, onSubmit, onCancel, userRole }: UploadF
                     type="button"
                     variant="outline"
                     onClick={() => setActiveSection(4)}
-                    className="border-slate-700 text-white hover:bg-slate-800 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl"
+                    className="border-2 border-slate-500 bg-slate-800/50 text-slate-100 hover:bg-slate-700 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl"
                   >
                     Previous
                   </Button>
@@ -1217,15 +1221,15 @@ const UploadForm = ({ isOpen, isLoading, onSubmit, onCancel, userRole }: UploadF
                       type="button"
                       onClick={() => setActiveSection(1)}
                       variant="outline"
-                      className="border-slate-700 text-white hover:bg-slate-800 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl"
+                      className="border-2 border-slate-500 bg-slate-800/50 text-slate-100 hover:bg-slate-700 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl"
                     >
                       Save Draft
                     </Button>
                     <Button
                       type="submit"
                       disabled={isLoading}
-                      style={{ background: colors.gradients.blue }}
-                      className="text-white hover:opacity-90 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl flex items-center gap-2 disabled:opacity-50"
+                      style={{ background: colors.gradients.blue, color: '#ffffff' }}
+                      className="bg-blue-600 text-white hover:opacity-90 transition-all duration-300 px-8 py-3 text-lg font-semibold rounded-xl flex items-center gap-2 disabled:opacity-50 border-0"
                     >
                       {isLoading ? (
                         <>

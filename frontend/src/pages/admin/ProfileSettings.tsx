@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { userService } from "@/services/userService";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Upload, 
@@ -27,6 +28,24 @@ import {
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { countriesWithCodes, parsePhone, buildPhone } from "@/data/countriesWithCodes";
+
+// Bank / payment method options for dropdown (EasyPaisa, JazzCash, banks, Custom)
+const PAYMENT_BANK_OPTIONS = [
+  { value: "EasyPaisa", label: "EasyPaisa" },
+  { value: "JazzCash", label: "JazzCash" },
+  { value: "Alfalah", label: "Bank Alfalah" },
+  { value: "Meezan", label: "Meezan Bank" },
+  { value: "HBL", label: "HBL" },
+  { value: "UBL", label: "UBL" },
+  { value: "MCB", label: "MCB" },
+  { value: "ABL", label: "Allied Bank" },
+  { value: "Askari", label: "Askari Bank" },
+  { value: "Faysal", label: "Faysal Bank" },
+  { value: "Soneri", label: "Soneri Bank" },
+  { value: "Custom", label: "Other / Custom (add name below)" },
+] as const;
 
 // Define the user profile type
 interface UserProfile {
@@ -36,9 +55,12 @@ interface UserProfile {
   profileImage?: string;
   fullName?: string;
   phone?: string;
+  phoneCountryCode?: string;
+  phoneNumber?: string;
   address?: string;
   city?: string;
   country?: string;
+  accountTitle?: string;
   bankName?: string;
   accountNumber?: string;
   easyPaisaNumber?: string;
@@ -50,11 +72,8 @@ interface UserProfile {
 
 const ProfileSettings = () => {
   const { toast } = useToast();
-  const { 
-    user, 
-    updateUser, 
-    isUpdatingUser 
-  } = useAuth();
+  const { user, userQuery } = useAuth();
+  const [isUpdatingUser, setIsUpdatingUser] = useState(false);
   
   // Initialize form state with user data
   const [formData, setFormData] = useState<UserProfile>({
@@ -64,9 +83,12 @@ const ProfileSettings = () => {
     profileImage: '',
     fullName: '',
     phone: '',
+    phoneCountryCode: '+92',
+    phoneNumber: '',
     address: '',
     city: '',
     country: '',
+    accountTitle: '',
     bankName: '',
     accountNumber: '',
     easyPaisaNumber: '',
@@ -77,31 +99,82 @@ const ProfileSettings = () => {
   });
 
   const [showAccountNumber, setShowAccountNumber] = useState(false);
+  // Bank dropdown: selected option (or "Custom"); when Custom, customBankName is the typed name
+  const [bankSelect, setBankSelect] = useState<string>("");
+  const [customBankName, setCustomBankName] = useState("");
 
-  // Update form data when user data loads
+  // Fetch full profile (includes wallet) and sync to form
   useEffect(() => {
-    if (user) {
-      setFormData(prev => ({
-        ...prev,
-        id: user.id || '',
-        email: user.email || '',
-        role: user.role || 'user',
-        profileImage: user.profileImage || '',
-        fullName: user.fullName || '',
-        phone: user.phone || '',
-        address: user.address || '',
-        city: user.city || '',
-        country: user.country || '',
-        bankName: user.bankName || '',
-        accountNumber: user.accountNumber || '',
-        easyPaisaNumber: user.easyPaisaNumber || '',
-        jazzCashNumber: user.jazzCashNumber || '',
-        idCardFront: user.idCardFront || '',
-        idCardBack: user.idCardBack || '',
-        isVerified: user.isVerified || false
-      }));
-    }
-  }, [user]);
+    const syncProfile = async () => {
+      if (!user?.id) return;
+      try {
+        const res = await userService.getProfile();
+        const u = res.data?.user as any;
+        if (!u) return;
+        const wallet = u.wallet?.paymentInfo;
+        const bank = wallet?.bankAccount;
+        setFormData(prev => ({
+          ...prev,
+          id: u._id || user.id || '',
+          email: u.email || user.email || '',
+          role: u.role || user.role || 'user',
+          profileImage: u.profileImage?.url || user.profileImage || '',
+          fullName: u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : user.fullName || '',
+          phone: u.phone || user.phone || '',
+          ...((): { phoneCountryCode: string; phoneNumber: string } => {
+            const { dialCode, number } = parsePhone(u.phone || user.phone);
+            return { phoneCountryCode: dialCode, phoneNumber: number };
+          })(),
+          address: u.address?.street || user.address || '',
+          city: u.address?.city || user.city || '',
+          country: u.address?.country || user.country || '',
+          accountTitle: bank?.accountTitle || (u as any).accountTitle || '',
+          bankName: bank?.bankName || u.bankName || '',
+          accountNumber: bank?.accountNumber || u.accountNumber || '',
+          easyPaisaNumber: wallet?.easypaisaNumber || u.easyPaisaNumber || '',
+          jazzCashNumber: wallet?.jazzcashNumber || u.jazzCashNumber || '',
+          idCardFront: u.idCardFront || user.idCardFront || '',
+          idCardBack: u.idCardBack || user.idCardBack || '',
+          isVerified: u.isVerified ?? user.isVerified ?? false
+        }));
+        const bn = (bank?.bankName || u.bankName || '').trim();
+        const option = PAYMENT_BANK_OPTIONS.find((o) => o.value === bn);
+        setBankSelect(option ? option.value : (bn ? 'Custom' : ''));
+        setCustomBankName(option ? '' : bn);
+      } catch {
+        if (user) {
+          const fallbackBank = (user as any).bankName || '';
+          setFormData(prev => ({
+            ...prev,
+            id: user.id || '',
+            email: user.email || '',
+            role: user.role || 'user',
+            profileImage: user.profileImage || '',
+            fullName: user.fullName || '',
+            phone: user.phone || '',
+            phoneCountryCode: parsePhone(user.phone).dialCode,
+            phoneNumber: parsePhone(user.phone).number,
+            address: user.address || '',
+            city: user.city || '',
+            country: user.country || '',
+            accountTitle: (user as any).accountTitle || '',
+            bankName: fallbackBank,
+            accountNumber: (user as any).accountNumber || '',
+            easyPaisaNumber: (user as any).easyPaisaNumber || '',
+            jazzCashNumber: (user as any).jazzCashNumber || '',
+            idCardFront: user.idCardFront || '',
+            idCardBack: user.idCardBack || '',
+            isVerified: user.isVerified ?? false
+          }));
+          const bn = (fallbackBank || '').trim();
+          const opt = PAYMENT_BANK_OPTIONS.find((o) => o.value === bn);
+          setBankSelect(opt ? opt.value : (bn ? 'Custom' : ''));
+          setCustomBankName(opt ? '' : bn);
+        }
+      }
+    };
+    syncProfile();
+  }, [user?.id]);
 
   // Handle file uploads
   const handleProfileImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,17 +242,73 @@ const ProfileSettings = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Save all changes
+  // Save all changes (profile + payment details)
   const handleSave = async () => {
+    setIsUpdatingUser(true);
     try {
-      await updateUser(formData);
+      await userService.updateProfile({
+        firstName: formData.fullName?.split(' ')[0] || '',
+        lastName: formData.fullName?.split(' ').slice(1).join(' ') || '',
+        phone: buildPhone(formData.phoneCountryCode || '+92', formData.phoneNumber || '') || formData.phone,
+        address: formData.address ? { street: formData.address, city: formData.city, country: formData.country } : undefined,
+      });
+      const resolvedBank = bankSelect === 'Custom' ? (customBankName || '').trim() : (bankSelect || '');
+      await userService.updatePaymentInfo({
+        jazzcashNumber: '',
+        easypaisaNumber: '',
+        bankAccount: {
+          accountTitle: formData.accountTitle || '',
+          bankName: resolvedBank,
+          accountNumber: formData.accountNumber || '',
+        },
+      });
       toast({
-        title: "Profile Updated",
-        description: "Your profile has been updated successfully",
+        title: "Saved",
+        description: "Profile and payment details have been saved successfully.",
         variant: "default",
       });
-    } catch (error) {
+      userQuery?.refetch?.();
+    } catch (error: any) {
       console.error('Failed to update profile:', error);
+      toast({
+        title: "Update failed",
+        description: error?.response?.data?.message || "Could not save. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingUser(false);
+    }
+  };
+
+  // Save only payment details (from Payment tab) – works for admin & superadmin
+  const handleSavePaymentDetails = async () => {
+    const resolvedBankName = bankSelect === 'Custom' ? (customBankName || '').trim() : (bankSelect || '');
+    setIsUpdatingUser(true);
+    try {
+      await userService.updatePaymentInfo({
+        jazzcashNumber: '',
+        easypaisaNumber: '',
+        bankAccount: {
+          accountTitle: formData.accountTitle || '',
+          bankName: resolvedBankName,
+          accountNumber: formData.accountNumber || '',
+        },
+      });
+      setFormData(prev => ({ ...prev, bankName: resolvedBankName }));
+      toast({
+        title: "Payment details saved",
+        description: "Your payment details have been saved successfully.",
+        variant: "default",
+      });
+      userQuery?.refetch?.();
+    } catch (error: any) {
+      toast({
+        title: "Could not save",
+        description: error?.response?.data?.message || "Please check the fields and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingUser(false);
     }
   };
 
@@ -456,22 +585,44 @@ const ProfileSettings = () => {
 
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="phone" className="flex items-center gap-2 text-sm font-medium" style={{ color: '#cbd5e1' }}>
+                        <Label className="flex items-center gap-2 text-sm font-medium" style={{ color: '#cbd5e1' }}>
                           <Phone className="h-4 w-4" style={{ color: '#94a3b8' }} />
-                          Phone Number
+                          Phone Number (Country + Code)
                         </Label>
-                        <Input 
-                          id="phone"
-                          value={formData.phone}
-                          onChange={(e) => handleInputChange('phone', e.target.value)}
-                          placeholder="+92 300 1234567"
-                          className="h-11 rounded-lg transition-colors"
-                          style={{
-                            backgroundColor: '#1f2937',
-                            borderColor: '#374151',
-                            color: '#f1f5f9'
-                          }}
-                        />
+                        <div className="flex gap-2">
+                          <Select
+                            value={formData.phoneCountryCode || '+92'}
+                            onValueChange={(v) => handleInputChange('phoneCountryCode', v)}
+                          >
+                            <SelectTrigger
+                              className="h-11 w-[140px] rounded-lg shrink-0"
+                              style={{ backgroundColor: '#1f2937', borderColor: '#374151', color: '#f1f5f9' }}
+                            >
+                              <SelectValue placeholder="Code" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[280px] bg-slate-800 border-slate-600">
+                              {countriesWithCodes.map((c) => (
+                                <SelectItem key={c.code} value={c.dialCode} className="text-slate-200 focus:bg-slate-700 focus:text-white">
+                                  {c.name} {c.dialCode}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            id="phone"
+                            type="tel"
+                            value={formData.phoneNumber ?? ''}
+                            onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                            placeholder="300 1234567"
+                            className="h-11 rounded-lg flex-1 transition-colors"
+                            style={{
+                              backgroundColor: '#1f2937',
+                              borderColor: '#374151',
+                              color: '#f1f5f9'
+                            }}
+                          />
+                        </div>
+                        <p className="text-xs" style={{ color: '#94a3b8' }}>All countries with dial code shown in dropdown</p>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="role" className="flex items-center gap-2 text-sm font-medium" style={{ color: '#cbd5e1' }}>
@@ -735,158 +886,117 @@ const ProfileSettings = () => {
               </Card>
             </TabsContent>
 
-            {/* Payment Tab */}
+            {/* Payment Tab – layout like reference: For Payments, method card, form fields, Save button */}
             <TabsContent value="payment" className="space-y-6">
-              <Card className="rounded-2xl" style={{
-                backgroundColor: '#1a2234',
-                border: '1px solid rgba(100, 116, 139, 0.15)'
-              }}>
-                <CardHeader className="pb-4" style={{ 
-                  borderBottom: '1px solid rgba(100, 116, 139, 0.15)'
+              <div className="space-y-5">
+                <h3 className="text-lg font-semibold" style={{ color: '#f1f5f9' }}>
+                  For Payments
+                </h3>
+
+                {/* Selected method card (Bank Account) */}
+                <div
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 border-2"
+                  style={{
+                    backgroundColor: '#1e293b',
+                    borderColor: 'rgba(59, 130, 246, 0.5)',
+                    color: '#f1f5f9'
+                  }}
+                >
+                  <div className="p-2 rounded-lg bg-slate-700/50">
+                    <Building2 className="h-5 w-5" style={{ color: '#94a3b8' }} />
+                  </div>
+                  <span className="font-medium">Bank Account</span>
+                  <span className="text-sm ml-auto" style={{ color: '#94a3b8' }}>For payouts</span>
+                </div>
+
+                {/* Form card – all banking fields */}
+                <Card className="rounded-2xl overflow-hidden" style={{
+                  backgroundColor: '#1a2234',
+                  border: '1px solid rgba(100, 116, 139, 0.2)'
                 }}>
-                  <CardTitle className="flex items-center gap-2 text-base font-semibold" style={{ color: '#f1f5f9' }}>
-                    <Wallet className="h-5 w-5" style={{ color: '#94a3b8' }} />
-                    Payment Information
-                  </CardTitle>
-                  <CardDescription style={{ color: '#94a3b8' }}>
-                    Manage your payment methods and account details
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-8 pt-6">
-                  {/* Bank Account */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-base flex items-center gap-2 pb-3" style={{ 
-                      color: '#f1f5f9',
-                      borderBottom: '1px solid rgba(100, 116, 139, 0.15)'
-                    }}>
-                      <Building2 className="h-5 w-5" style={{ color: '#94a3b8' }} />
-                      Bank Account Details
-                    </h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="bankName" className="text-sm font-medium" style={{ color: '#cbd5e1' }}>
-                          Bank Name
-                        </Label>
-                        <Input 
-                          id="bankName"
-                          value={formData.bankName}
-                          onChange={(e) => handleInputChange('bankName', e.target.value)}
-                          placeholder="e.g., HBL, MCB, UBL"
-                          className="h-11 rounded-lg transition-colors"
-                          style={{
-                            backgroundColor: '#1f2937',
-                            borderColor: '#374151',
-                            color: '#f1f5f9'
-                          }}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="accountNumber" className="text-sm font-medium flex items-center justify-between" style={{ color: '#cbd5e1' }}>
-                          <span className="flex items-center gap-2">
-                            <DollarSign className="h-4 w-4" style={{ color: '#94a3b8' }} />
-                            Account Number
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setShowAccountNumber(!showAccountNumber)}
-                            className="text-xs hover:underline"
-                            style={{ color: '#94a3b8' }}
-                          >
-                            {showAccountNumber ? (
-                              <EyeOff className="h-3 w-3 inline mr-1" />
-                            ) : (
-                              <Eye className="h-3 w-3 inline mr-1" />
-                            )}
-                            {showAccountNumber ? 'Hide' : 'Show'}
-                          </button>
-                        </Label>
-                        <div className="relative">
-                          <Input 
-                            id="accountNumber"
-                            type={showAccountNumber ? "text" : "password"}
-                            value={formData.accountNumber}
-                            onChange={(e) => handleInputChange('accountNumber', e.target.value)}
-                            placeholder="Enter your account number"
-                            className="h-11 rounded-lg transition-colors pr-10"
-                            style={{
-                              backgroundColor: '#1f2937',
-                              borderColor: '#374151',
-                              color: '#f1f5f9'
-                            }}
-                          />
-                        </div>
-                      </div>
+                  <CardContent className="p-6 space-y-5">
+                    <div className="space-y-2">
+                      <Label htmlFor="accountTitle" className="text-sm font-medium" style={{ color: '#cbd5e1' }}>
+                        Account holder name
+                      </Label>
+                      <Input
+                        id="accountTitle"
+                        value={formData.accountTitle || ''}
+                        onChange={(e) => handleInputChange('accountTitle', e.target.value)}
+                        placeholder="Full Name"
+                        className="h-11 rounded-lg bg-slate-800/50 border-slate-600 text-slate-100 placeholder:text-slate-400"
+                      />
                     </div>
-                  </div>
-
-                  <Separator style={{ backgroundColor: '#374151' }} />
-
-                  {/* Mobile Payment Methods */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-base flex items-center gap-2 pb-3" style={{ 
-                      color: '#f1f5f9',
-                      borderBottom: '1px solid rgba(100, 116, 139, 0.15)'
-                    }}>
-                      <Phone className="h-5 w-5" style={{ color: '#94a3b8' }} />
-                      Mobile Payment Methods
-                    </h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="easyPaisa" className="text-sm font-medium" style={{ color: '#cbd5e1' }}>
-                          EasyPaisa Number
-                        </Label>
-                        <Input 
-                          id="easyPaisa"
-                          value={formData.easyPaisaNumber}
-                          onChange={(e) => handleInputChange('easyPaisaNumber', e.target.value)}
-                          placeholder="03XX XXXXXXX"
-                          className="h-11 rounded-lg transition-colors"
-                          style={{
-                            backgroundColor: '#1f2937',
-                            borderColor: '#374151',
-                            color: '#f1f5f9'
-                          }}
+                    <div className="space-y-2">
+                      <Label htmlFor="bankName" className="text-sm font-medium" style={{ color: '#cbd5e1' }}>
+                        Bank / Payment method
+                      </Label>
+                      <Select value={bankSelect || undefined} onValueChange={(v) => setBankSelect(v || '')}>
+                        <SelectTrigger className="h-11 rounded-lg bg-slate-800/50 border-slate-600 text-slate-100">
+                          <SelectValue placeholder="Select bank or method" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-800 border-slate-600">
+                          {PAYMENT_BANK_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value} className="text-slate-200 focus:bg-slate-700">
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {bankSelect === 'Custom' && (
+                        <Input
+                          value={customBankName}
+                          onChange={(e) => setCustomBankName(e.target.value)}
+                          placeholder="Type custom bank or method name"
+                          className="mt-2 h-11 rounded-lg bg-slate-800/50 border-slate-600 text-slate-100 placeholder:text-slate-400"
                         />
-                        <p className="text-xs" style={{ color: '#94a3b8' }}>
-                          Your registered EasyPaisa mobile number
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="jazzCash" className="text-sm font-medium" style={{ color: '#cbd5e1' }}>
-                          JazzCash Number
-                        </Label>
-                        <Input 
-                          id="jazzCash"
-                          value={formData.jazzCashNumber}
-                          onChange={(e) => handleInputChange('jazzCashNumber', e.target.value)}
-                          placeholder="03XX XXXXXXX"
-                          className="h-11 rounded-lg transition-colors"
-                          style={{
-                            backgroundColor: '#1f2937',
-                            borderColor: '#374151',
-                            color: '#f1f5f9'
-                          }}
-                        />
-                        <p className="text-xs" style={{ color: '#94a3b8' }}>
-                          Your registered JazzCash mobile number
-                        </p>
-                      </div>
+                      )}
                     </div>
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="accountNumber" className="text-sm font-medium flex items-center justify-between" style={{ color: '#cbd5e1' }}>
+                        Account / Number
+                        <button
+                          type="button"
+                          onClick={() => setShowAccountNumber(!showAccountNumber)}
+                          className="text-xs hover:underline"
+                          style={{ color: '#94a3b8' }}
+                        >
+                          {showAccountNumber ? <EyeOff className="h-3 w-3 inline mr-1" /> : <Eye className="h-3 w-3 inline mr-1" />}
+                          {showAccountNumber ? 'Hide' : 'Show'}
+                        </button>
+                      </Label>
+                      <Input
+                        id="accountNumber"
+                        type={showAccountNumber ? 'text' : 'password'}
+                        value={formData.accountNumber || ''}
+                        onChange={(e) => handleInputChange('accountNumber', e.target.value)}
+                        placeholder="Account number or 03XX for EasyPaisa/JazzCash"
+                        className="h-11 rounded-lg bg-slate-800/50 border-slate-600 text-slate-100 placeholder:text-slate-400"
+                      />
+                    </div>
 
-                  <div className="p-4 rounded-lg" style={{ 
-                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                    border: '1px solid rgba(245, 158, 11, 0.3)'
-                  }}>
-                    <p className="text-sm flex items-start gap-2" style={{ color: '#fbbf24' }}>
-                      <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                      <span>
-                        <strong>Note:</strong> Payment information is securely stored and will be used for transaction processing. Make sure all details are accurate.
-                      </span>
+                    <Button
+                      type="button"
+                      onClick={handleSavePaymentDetails}
+                      disabled={isUpdatingUser}
+                      className="w-full h-12 rounded-xl font-semibold text-base bg-blue-600 hover:bg-blue-700 text-white border-0"
+                    >
+                      {isUpdatingUser ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                          Saving...
+                        </span>
+                      ) : (
+                        <>Save Payment Details</>
+                      )}
+                    </Button>
+
+                    <p className="text-xs text-center" style={{ color: '#94a3b8' }}>
+                      We will use these details for payouts. Make sure all details are accurate.
                     </p>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
           </Tabs>
         </div>

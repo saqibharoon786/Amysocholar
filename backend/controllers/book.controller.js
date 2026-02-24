@@ -286,6 +286,35 @@ const getPendingBooks = async (req, res, next) => {
   }
 };
 
+// Get books by uploader (Superadmin only – for user management)
+const getBooksByUploader = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const { page = 1, limit = 20 } = req.query;
+
+    const books = await Book.find({ uploader: userId, isDeleted: { $ne: true } })
+      .populate('approvedBy', 'firstName lastName')
+      .select('-textContent')
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .sort({ createdAt: -1 });
+
+    const total = await Book.countDocuments({ uploader: userId, isDeleted: { $ne: true } });
+
+    res.status(200).json({
+      success: true,
+      data: { books },
+      pagination: {
+        current: parseInt(page),
+        total: Math.ceil(total / limit),
+        results: total,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Update book (Admin only - only their own books, Superadmin only - only their own books)
 const updateBook = async (req, res) => {
   try {
@@ -944,6 +973,7 @@ module.exports = {
   getBookById,
   getMyBooks,
   getPendingBooks,
+  getBooksByUploader,
   updateBook,
   deleteBook,
   getBookPreview,

@@ -316,6 +316,16 @@ updateBook: async (id: string): Promise<ApiResponse> => {
     return response.data;
   },
 
+  getBooksByUploader: async (userId: string, page: number = 1, limit: number = 20): Promise<ApiResponse<{ books: Book[] }>> => {
+    const response = await api.get<ApiResponse<{ books: Book[] }>>(`/book/admin/uploader/${userId}`, {
+      params: { page, limit }
+    });
+    if (response.data.success && response.data.data?.books) {
+      response.data.data.books = processBooksData(response.data.data.books);
+    }
+    return response.data;
+  },
+
   approveBook: async (id: string): Promise<ApiResponse<{ book: Book }>> => {
     const response = await api.patch<ApiResponse<{ book: Book }>>(`/book/admin/${id}/approve`);
     if (response.data.success && response.data.data?.book) {

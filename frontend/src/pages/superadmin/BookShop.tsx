@@ -578,25 +578,28 @@ const BookShop = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => handlePreview(book)}
-                            className="border-blue-500/30 text-white hover:bg-white/10"
+                            className="border-slate-500 bg-slate-700/80 text-slate-100 hover:bg-slate-600 min-w-[36px]"
+                            title="View details"
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-4 w-4 text-slate-100" />
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleEdit(book)}
-                            className="border-blue-500/30 text-white hover:bg-white/10"
+                            className="border-slate-500 bg-slate-700/80 text-slate-100 hover:bg-slate-600 min-w-[36px]"
+                            title="Edit"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-4 w-4 text-slate-100" />
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleDelete(book)}
-                            className="border-blue-500/30 text-white hover:bg-white/10"
+                            className="border-slate-500 bg-slate-700/80 text-red-300 hover:bg-red-900/40 min-w-[36px]"
+                            title="Delete"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4 text-red-300" />
                           </Button>
                         </div>
                       </TableCell>
@@ -767,24 +770,27 @@ const BookShop = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => handlePreview(book)}
-                            className="border-blue-500/30 text-white hover:bg-white/10"
+                            className="border-slate-500 bg-slate-700/80 text-slate-100 hover:bg-slate-600 min-w-[36px]"
+                            title="View details"
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-4 w-4 text-slate-100" />
                           </Button>
                           <Button
                             size="sm"
                             onClick={() => handleApprove(book)}
-                            className="bg-green-600 text-white hover:bg-green-700"
+                            className="bg-green-600 text-white hover:bg-green-700 min-w-[36px]"
+                            title="Approve"
                           >
                             <CheckCircle className="h-4 w-4" />
                           </Button>
                           <Button
-                            variant="destructive"
+                            variant="outline"
                             size="sm"
                             onClick={() => handleReject(book)}
-                            className="bg-red-600 text-white hover:bg-red-700"
+                            className="border-slate-500 bg-red-900/50 text-red-300 hover:bg-red-800 min-w-[36px]"
+                            title="Reject"
                           >
-                            <XCircle className="h-4 w-4" />
+                            <XCircle className="h-4 w-4 text-red-300" />
                           </Button>
                         </div>
                       </TableCell>

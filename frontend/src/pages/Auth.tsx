@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Lock, Mail, User, Phone, Eye, EyeOff, Key } from "lucide-react";
 import type { UserRole, VerificationMethod } from "@/services/authService";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { countriesWithCodes, buildPhone } from "@/data/countriesWithCodes";
 
 const Auth = () => {
   const [isSignup, setIsSignup] = useState(false);
@@ -23,6 +25,8 @@ const Auth = () => {
     email: "",
     password: "",
     phone: "",
+    phoneCountryCode: "+92",
+    phoneNumber: "",
     verificationCode: "",
     role: "customer" as UserRole,
     verificationMethod: "email" as VerificationMethod,
@@ -119,7 +123,7 @@ const Auth = () => {
         lastName: formData.lastName,
         email: formData.email,
         password: formData.password,
-        phone: formData.phone,
+        phone: buildPhone(formData.phoneCountryCode, formData.phoneNumber) || formData.phone,
         role: formData.role,
         verificationMethod: formData.verificationMethod
       });
@@ -574,20 +578,39 @@ const Auth = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-white/90">Phone Number</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
+                <Label className="text-white/90 flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-white/70" />
+                  Phone Number (Country + Code)
+                </Label>
+                <div className="flex gap-2">
+                  <Select
+                    value={formData.phoneCountryCode}
+                    onValueChange={(v) => handleInputChange("phoneCountryCode", v)}
+                    disabled={isRegistering}
+                  >
+                    <SelectTrigger className="w-[160px] shrink-0 bg-white/10 border-white/30 text-white focus:ring-white/30 [&>span]:text-white">
+                      <SelectValue placeholder="Country / Code" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[280px] bg-slate-800 border-slate-600">
+                      {countriesWithCodes.map((c) => (
+                        <SelectItem key={c.code} value={c.dialCode} className="text-slate-200 focus:bg-slate-700 focus:text-white">
+                          {c.name} {c.dialCode}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="Enter your phone number"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
+                    placeholder="300 1234567"
+                    value={formData.phoneNumber}
+                    onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
                     required
                     disabled={isRegistering}
-                    className="bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-white/40 focus:ring-white/20 pl-10"
+                    className="flex-1 bg-white/10 border-white/30 text-white placeholder:text-white/50 focus:border-white/50 focus:ring-white/30"
                   />
                 </div>
+                <p className="text-xs text-white/60">Select country and enter number — visible with code</p>
               </div>
 
               <div className="space-y-2">

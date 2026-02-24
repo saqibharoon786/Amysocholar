@@ -11,9 +11,8 @@ import BookShop from "@/pages/superadmin/BookShop";
 import BookList from "@/pages/superadmin/BookList";
 import ProfileSettings from "@/pages/admin/ProfileSettings";
 import ApproveBooks from "@/pages/superadmin/ApproveBooks";
-
-// Temporary placeholder component
-const UserManagement = () => <div>User Management - Coming Soon</div>;
+import UserManagement from "@/pages/superadmin/UserManagement";
+import Categories from "@/pages/admin/Categories";
 
 const SuperAdminRoutes = () => {
   return (
@@ -34,6 +33,7 @@ const SuperAdminRoutes = () => {
         <Route path="books" element={<BookList />} />
         <Route path="approve" element={<ApproveBooks />} />
         <Route path="users" element={<UserManagement />} />
+        <Route path="categories" element={<Categories />} />
         <Route path="profile" element={<ProfileSettings />} />
       </Route>
     </Routes>

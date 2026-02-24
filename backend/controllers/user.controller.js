@@ -1,7 +1,6 @@
 const User = require('../models/user.model');
-const { request } = require('express');
-// const Book = require('../models/book.model');
-// const Purchase = require('../models/purchase.model');
+const Book = require('../models/book.model');
+const Purchase = require('../models/purchases.model');
 const AppError = require('../utils/appError');
 
 // Get user profile
@@ -10,7 +9,7 @@ const getProfile = async (req, res, next) => {
     const user = await User.findById(req.user.id);
     res.status(200).json({
       success: true,
-      data: { user: user.getPublicProfile() },
+      data: { user: user.getProfile() },
     });
   } catch (error) {
     next(error);
@@ -40,7 +39,7 @@ const updateProfile = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      data: { user: user.getPublicProfile() },
+      data: { user: user.getProfile() },
     });
   } catch (error) {
     next(error);
@@ -84,7 +83,7 @@ const uploadProfileImage = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      data: { user: user.getPublicProfile() },
+      data: { user: user.getProfile() },
     });
   } catch (error) {
     next(error);
@@ -115,7 +114,7 @@ const verifyCNIC = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: 'CNIC submitted for verification',
-      data: { user: user.getPublicProfile() },
+      data: { user: user.getProfile() },
     });
   } catch (error) {
     next(error);
@@ -248,7 +247,69 @@ const getAllUsers = async (req, res, next) => {
 //   }
 // };
 
-// // Get admin stats
+// Update payment info (bank, JazzCash, EasyPaisa)
+const updatePaymentInfo = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return next(new AppError('User not found', 404));
+    await user.updatePaymentInfo(req.body);
+    const updated = await User.findById(req.user.id);
+    res.status(200).json({
+      success: true,
+      data: { user: updated.getProfile() },
+      message: 'Payment details updated',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Dashboard stats: for superadmin full stats, for admin my books count
+const getDashboardStats = async (req, res, next) => {
+  try {
+    if (req.user.role === 'superadmin') {
+      const [totalUsers, totalAdmins, totalCustomers, pendingVerifications, totalBooks, purchaseStats] = await Promise.all([
+        User.countDocuments(),
+        User.countDocuments({ role: 'admin' }),
+        User.countDocuments({ role: 'customer' }),
+        User.countDocuments({ 'cnic.verified': false }),
+        Book.countDocuments({ isDeleted: { $ne: true } }),
+        Purchase.aggregate([
+          { $match: { paymentStatus: 'completed' } },
+          { $group: { _id: null, totalRevenue: { $sum: '$amount' }, totalOrders: { $sum: 1 } } },
+        ]),
+      ]);
+      const rev = purchaseStats[0];
+      return res.status(200).json({
+        success: true,
+        data: {
+          totalUsers,
+          totalAdmins,
+          totalCustomers,
+          pendingVerifications,
+          totalBooks,
+          totalRevenue: rev?.totalRevenue || 0,
+          totalOrders: rev?.totalOrders || 0,
+        },
+      });
+    }
+    if (req.user.role === 'admin') {
+      const [myBooks, myPending] = await Promise.all([
+        Book.countDocuments({ uploader: req.user.id, isDeleted: { $ne: true } }),
+        Book.countDocuments({ uploader: req.user.id, status: 'pending', isDeleted: { $ne: true } }),
+      ]);
+      return res.status(200).json({
+        success: true,
+        data: { totalBooks: myBooks, pendingBooks: myPending },
+      });
+    }
+    return next(new AppError('Unauthorized', 403));
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get admin stats (superadmin only, legacy)
 const getAdminStats = async (req, res, next) => {
   try {
     const totalUsers = await User.countDocuments();
@@ -299,11 +360,8 @@ module.exports = {
   updatePassword,
   uploadProfileImage,
   verifyCNIC,
+  updatePaymentInfo,
+  getDashboardStats,
   getAllUsers,
-//   getUserById,
-//   updateUser,
-//   deleteUser,
-//   deactivateUser,
   getAdminStats,
-//   getCustomerStats,
 };
