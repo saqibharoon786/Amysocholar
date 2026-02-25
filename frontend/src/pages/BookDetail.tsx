@@ -239,7 +239,7 @@ const handlePurchase = async () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Loading book details...</span>
+        <span className="ml-2">Loading books details...</span>
       </div>
     );
   }
