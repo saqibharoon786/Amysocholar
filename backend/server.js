@@ -87,15 +87,24 @@ app.use(
 );
 
 // ===== CORS =====
-// Allow frontend origin: use FRONTEND_URL, and in development also allow common dev ports (8080, 3000, 5173)
-const allowedOrigins = [
-  FRONTEND_URL 
-].filter(Boolean);
+// Allow FRONTEND_URL and both www / non-www so "Network Error" na aaye (origin mismatch = CORS block)
+const allowedOrigins = [FRONTEND_URL].filter(Boolean);
+if (FRONTEND_URL) {
+  try {
+    const u = new URL(FRONTEND_URL);
+    if (u.hostname.startsWith("www.")) {
+      allowedOrigins.push(u.origin.replace("www.", ""));
+    } else {
+      allowedOrigins.push(u.origin.replace(u.hostname, "www." + u.hostname));
+    }
+  } catch (_) {}
+}
 
 app.use(
   cors({
     origin: (origin, cb) => {
-      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
       return cb(null, false);
     },
     credentials: true,

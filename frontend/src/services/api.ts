@@ -29,20 +29,19 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
-      // Redirect to login page if not already there
       if (window.location.pathname !== '/auth') {
         window.location.href = '/auth';
       }
     }
-    
-    // Handle other common errors
     if (error.response?.status === 500) {
       console.error('Server error:', error);
     }
-    
+    // "Network Error" = no response (CORS, server down, wrong API URL, or timeout)
+    if (!error.response && (error.message === 'Network Error' || error.code === 'ERR_NETWORK')) {
+      error.userMessage = 'Cannot reach server. Check your connection and that the API is running (CORS / URL).';
+    }
     return Promise.reject(error);
   }
 );

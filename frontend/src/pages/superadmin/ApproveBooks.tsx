@@ -291,10 +291,12 @@ const ApproveBooks = () => {
       } else {
         throw new Error(response.message || "Failed to fetch pending books");
       }
-    } catch (err) {
+    } catch (err: unknown) {
+      const msg = (err as { userMessage?: string; message?: string })?.userMessage
+        ?? (err instanceof Error ? err.message : "Failed to fetch pending books");
       toast({
         title: "Error",
-        description: err instanceof Error ? err.message : "Failed to fetch pending books",
+        description: msg,
         variant: "destructive",
       });
     } finally {
@@ -326,10 +328,12 @@ const ApproveBooks = () => {
       } else {
         throw new Error(response.message || "Failed to approve book");
       }
-    } catch (err) {
+    } catch (err: unknown) {
+      const msg = (err as { userMessage?: string; message?: string })?.userMessage
+        ?? (err instanceof Error ? err.message : "Failed to approve book");
       toast({
         title: "Approval Failed",
-        description: err instanceof Error ? err.message : "Failed to approve book",
+        description: msg,
         variant: "destructive"
       });
     } finally {
@@ -364,10 +368,12 @@ const ApproveBooks = () => {
       } else {
         throw new Error(response.message || "Failed to reject book");
       }
-    } catch (err) {
+    } catch (err: unknown) {
+      const msg = (err as { userMessage?: string; message?: string })?.userMessage
+        ?? (err instanceof Error ? err.message : "Failed to reject book");
       toast({
         title: "Rejection Failed",
-        description: err instanceof Error ? err.message : "Failed to reject book",
+        description: msg,
         variant: "destructive"
       });
     } finally {
