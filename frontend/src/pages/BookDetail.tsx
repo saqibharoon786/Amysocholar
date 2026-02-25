@@ -208,18 +208,20 @@ const handlePurchase = async () => {
 
     try {
       setSubmittingRating(true);
-      const response = await BookService.updateBookRating(book._id, rating);
+      const response = await BookService.updateBookRating(book._id, rating, comment);
       if (response.success) {
-        toast.success('Thank you for your rating!');
+        toast.success('Thank you for your rating! Your review will appear in the book owner\'s feedback.');
         setShowRatingModal(false);
-        // Refresh book data to update rating
         fetchBook(book._id);
       } else {
         toast.error(response.message || 'Failed to submit rating');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error submitting rating:', error);
-      toast.error('Failed to submit rating');
+      const msg = error && typeof error === 'object' && 'response' in error
+        ? (error as { response?: { data?: { message?: string } } }).response?.data?.message
+        : null;
+      toast.error(msg || 'Failed to submit rating.');
     } finally {
       setSubmittingRating(false);
     }

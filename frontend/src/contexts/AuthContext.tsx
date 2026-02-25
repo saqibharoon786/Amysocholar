@@ -7,29 +7,42 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   signout: () => void;
+  setUser: (user: User | null) => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in on mount
-    const token = localStorage.getItem('authToken');
-    const userData = localStorage.getItem('user');
-
-    if (token && userData) {
-      try {
-        setUser(JSON.parse(userData));
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
+    const syncUser = () => {
+      const token = localStorage.getItem('authToken');
+      const userData = localStorage.getItem('user');
+      if (token && userData) {
+        try {
+          setUser(JSON.parse(userData));
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('user');
+          setUser(null);
+        }
+      } else {
+        setUser(null);
       }
-    }
+    };
+    syncUser();
     setIsLoading(false);
+    // Login/verify ke baad context update ke liye – taake read book / rating sahi kaam kare
+    window.addEventListener('auth-login', syncUser);
+    const onLogout = () => setUser(null);
+    window.addEventListener('auth-logout', onLogout);
+    return () => {
+      window.removeEventListener('auth-login', syncUser);
+      window.removeEventListener('auth-logout', onLogout);
+    };
   }, []);
 
   const signout = () => {
@@ -47,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, signout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, signout, setUser }}>
       {children}
     </AuthContext.Provider>
   );

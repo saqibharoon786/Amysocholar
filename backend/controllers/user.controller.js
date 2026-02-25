@@ -1,6 +1,7 @@
 const User = require('../models/user.model');
 const Book = require('../models/book.model');
 const Purchase = require('../models/purchases.model');
+const Judgment = require('../models/judgment.model');
 const AppError = require('../utils/appError');
 
 // Get user profile
@@ -264,16 +265,31 @@ const updatePaymentInfo = async (req, res, next) => {
   }
 };
 
-// Dashboard stats: for superadmin full stats, for admin my books count
+// Dashboard stats: for superadmin full + own books/judgments; for admin only my books + pending
 const getDashboardStats = async (req, res, next) => {
   try {
     if (req.user.role === 'superadmin') {
-      const [totalUsers, totalAdmins, totalCustomers, pendingVerifications, totalBooks, purchaseStats] = await Promise.all([
+      const [
+        totalUsers,
+        totalAdmins,
+        totalCustomers,
+        pendingVerifications,
+        totalBooks,
+        myBooks,
+        myPendingBooks,
+        totalJudgments,
+        myJudgments,
+        purchaseStats,
+      ] = await Promise.all([
         User.countDocuments(),
         User.countDocuments({ role: 'admin' }),
         User.countDocuments({ role: 'customer' }),
         User.countDocuments({ 'cnic.verified': false }),
         Book.countDocuments({ isDeleted: { $ne: true } }),
+        Book.countDocuments({ uploader: req.user.id, isDeleted: { $ne: true } }),
+        Book.countDocuments({ uploader: req.user.id, status: 'pending', isDeleted: { $ne: true } }),
+        Judgment.countDocuments(),
+        Judgment.countDocuments({ uploader: req.user.id }),
         Purchase.aggregate([
           { $match: { paymentStatus: 'completed' } },
           { $group: { _id: null, totalRevenue: { $sum: '$amount' }, totalOrders: { $sum: 1 } } },
@@ -288,6 +304,10 @@ const getDashboardStats = async (req, res, next) => {
           totalCustomers,
           pendingVerifications,
           totalBooks,
+          myBooks,
+          myPendingBooks,
+          totalJudgments,
+          myJudgments,
           totalRevenue: rev?.totalRevenue || 0,
           totalOrders: rev?.totalOrders || 0,
         },

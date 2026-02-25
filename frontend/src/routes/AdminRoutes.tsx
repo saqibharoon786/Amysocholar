@@ -6,6 +6,7 @@ import Dashboard from "@/pages/admin/Dashboard";
 import UploadBook from "@/pages/UploadBook";
 import BookShop from "@/pages/admin/BookShop";
 import ProfileSettings from "@/pages/admin/ProfileSettings";
+import BookFeedback from "@/pages/admin/BookFeedback";
 
 const AdminRoutes = () => {
   return (
@@ -22,6 +23,7 @@ const AdminRoutes = () => {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="upload" element={<UploadBook />} />
         <Route path="shop" element={<BookShop />} />
+        <Route path="feedback" element={<BookFeedback />} />
         <Route path="profile" element={<ProfileSettings />} />
       </Route>
     </Routes>

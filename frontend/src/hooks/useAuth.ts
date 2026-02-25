@@ -1,6 +1,8 @@
 // hooks/useAuth.ts
+import { useContext } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { AuthContext } from '@/contexts/AuthContext';
 import { 
   authService, 
   RegisterData, 
@@ -18,6 +20,8 @@ const AUTH_QUERY_KEY = 'auth';
 export const useAuth = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const authContext = useContext(AuthContext);
+  const setUserFromContext = authContext?.setUser;
 
   // Register mutation
   const registerMutation = useMutation({
@@ -37,14 +41,15 @@ export const useAuth = () => {
     },
   });
 
-  // Login mutation
+  // Login mutation – turant context update taake bina refresh redirect ho
   const loginMutation = useMutation({
     mutationFn: authService.login,
     onSuccess: (data) => {
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('user', JSON.stringify(data.data.user));
       queryClient.setQueryData([AUTH_QUERY_KEY, 'user'], data.data.user);
-      
+      setUserFromContext?.(data.data.user);
+      window.dispatchEvent(new Event('auth-login'));
       toast({
         title: 'Signed in successfully!',
       });
@@ -58,14 +63,15 @@ export const useAuth = () => {
     },
   });
 
-  // Verify email mutation
+  // Verify email mutation – turant context update
   const verifyEmailMutation = useMutation({
     mutationFn: authService.verifyEmail,
     onSuccess: (data) => {
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('user', JSON.stringify(data.data.user));
       queryClient.setQueryData([AUTH_QUERY_KEY, 'user'], data.data.user);
-      
+      setUserFromContext?.(data.data.user);
+      window.dispatchEvent(new Event('auth-login'));
       toast({
         title: 'Email verified successfully!',
       });
@@ -156,11 +162,12 @@ export const useAuth = () => {
     },
   });
 
-  // Get current user query
+  // Token hai to hi user fetch karo; bina token (logout ke baad) loading kabhi na dikhao
+  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('authToken');
   const userQuery = useQuery({
     queryKey: [AUTH_QUERY_KEY, 'user'],
     queryFn: authService.getMe,
-    enabled: !!localStorage.getItem('authToken'),
+    enabled: hasToken,
     select: (data) => data.data?.user,
     onError: () => {
       localStorage.removeItem('authToken');
@@ -175,7 +182,9 @@ export const useAuth = () => {
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
       queryClient.removeQueries({ queryKey: [AUTH_QUERY_KEY] });
-      
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('auth-logout'));
+      }
       toast({
         title: 'Logged out successfully!',
       });
@@ -200,10 +209,11 @@ export const useAuth = () => {
     changePassword: changePasswordMutation.mutateAsync,
     logout: logoutMutation.mutateAsync,
 
-    // Queries
-    user: userQuery.data,
-    userQuery, // Return the entire query object for better control
-    isLoadingUser: userQuery.isLoading,
+    // Queries – user pehle context se (login ke baad bina refresh), phir query se
+    user: authContext?.user ?? userQuery.data,
+    userQuery,
+    // Logout ke baad token nahi hota – tab loading mat dikhao, taake sign-in form turant dikhe
+    isLoadingUser: hasToken ? userQuery.isLoading : false,
 
     // Loading states
     isRegistering: registerMutation.isPending,

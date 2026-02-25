@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Eye, CheckCircle, XCircle, Filter, Search, Star, Download, User, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { BookService, Book } from "@/services/BookService";
+import { BookService, Book, constructImageUrl } from "@/services/BookService";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Dialog,
@@ -358,7 +358,8 @@ const BookShop = () => {
   };
 
   const getCurrentImage = (book: Book) => {
-    return book.coverImages?.[0] || "/placeholder-book.png";
+    const path = book.coverImages?.[0];
+    return path ? constructImageUrl(path) : "/placeholder-book.png";
   };
 
   const getImageAlt = (book: Book) => {
@@ -427,7 +428,7 @@ const BookShop = () => {
   const filteredPendingBooks = getFilteredPendingBooks();
 
   return (
-    <div className="space-y-6 p-6 min-h-screen" style={{ backgroundColor: '#0f1729' }}>
+    <div className="space-y-6 p-6 min-h-screen pb-12 overflow-visible" style={{ backgroundColor: '#0f1729' }}>
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-4xl font-bold tracking-tight" style={{ color: '#f1f5f9' }}>
@@ -495,7 +496,7 @@ const BookShop = () => {
             </div>
           ) : (
             <>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 overflow-visible">
                 {filteredBooks.map((book) => (
                   <BookCard
                     key={book._id}
@@ -539,7 +540,7 @@ const BookShop = () => {
             </div>
           ) : (
             <>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 overflow-visible">
                 {filteredPendingBooks.map((book) => (
                   <PendingBookCard
                     key={book._id}
@@ -628,7 +629,7 @@ const BookCard = ({
   getImageAlt,
   handleImageError
 }: any) => (
-  <Card className={`group relative overflow-visible border-2 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ${getMyBook
+  <Card className={`group relative overflow-visible border-2 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 flex flex-col rounded-b-lg ${getMyBook
     ? 'border-slate-500 bg-slate-800/90 hover:border-blue-500/50'
     : 'border-slate-600 bg-slate-800/90 hover:border-slate-500'
     }`}>
@@ -645,21 +646,21 @@ const BookCard = ({
       </div>
     </div>
 
-    <CardHeader className="p-0 relative overflow-hidden rounded-t-lg">
-      <div className="relative overflow-hidden">
+    <CardHeader className="p-0 relative rounded-t-lg shrink-0">
+      <div className="relative w-full aspect-[3/4] min-h-[200px] bg-slate-700/50 rounded-t-lg overflow-hidden">
         <img
           src={getCurrentImage(book)}
           alt={getImageAlt(book)}
-          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           onError={(e) => handleImageError(e, book)}
           crossOrigin="anonymous"
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 pointer-events-none" />
       </div>
     </CardHeader>
 
-    <CardContent className="p-4 pt-4 space-y-3 overflow-visible">
+    <CardContent className="p-4 pt-4 space-y-3 overflow-visible flex-1 min-w-0">
       <CardTitle className="text-lg leading-snug line-clamp-2 text-slate-100 min-h-[2.5rem] pt-0">
         {book.title}
       </CardTitle>
@@ -684,7 +685,7 @@ const BookCard = ({
             <span className="text-slate-300">{book.downloadCount || 0}</span>
           </div>
         </div>
-        <Badge variant="outline" className="text-xs border-slate-500 text-slate-300">
+        <Badge variant="outline" className="text-xs border-slate-500 text-slate-300 shrink-0">
           {book.category}
         </Badge>
       </div>
@@ -701,12 +702,12 @@ const BookCard = ({
       )}
     </CardContent>
 
-    <CardFooter className="p-4 pt-0 flex gap-2 border-t border-slate-600">
+    <CardFooter className="p-4 pt-3 flex-shrink-0 flex gap-2 border-t border-slate-600 rounded-b-lg bg-slate-800/90 min-h-[52px] items-center">
       <Button
         variant="outline"
         size="sm"
         onClick={() => onPreview(book)}
-        className="flex-1 border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white"
+        className="flex-1 h-9 border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white"
       >
         <Eye className="h-4 w-4" />
       </Button>
@@ -714,7 +715,7 @@ const BookCard = ({
         variant="outline"
         size="sm"
         onClick={() => onEdit(book)}
-        className="flex-1 border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white"
+        className="flex-1 h-9 border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white"
       >
         <Edit className="h-4 w-4" />
       </Button>
@@ -722,7 +723,7 @@ const BookCard = ({
         variant="outline"
         size="sm"
         onClick={() => onDelete(book)}
-        className="flex-1 border-slate-500 text-slate-200 hover:bg-red-900/30 hover:text-red-300"
+        className="flex-1 h-9 border-slate-500 text-slate-200 hover:bg-red-900/30 hover:text-red-300"
       >
         <Trash2 className="h-4 w-4" />
       </Button>
@@ -743,7 +744,7 @@ const PendingBookCard = ({
   getImageAlt,
   handleImageError
 }: any) => (
-  <Card className={`group relative overflow-visible border-2 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ${getMyBook
+  <Card className={`group relative overflow-visible border-2 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 flex flex-col rounded-b-lg ${getMyBook
     ? 'border-slate-500 bg-slate-800/90 hover:border-blue-500/50'
     : 'border-slate-600 bg-slate-800/90 hover:border-slate-500'
     }`}>
@@ -758,21 +759,21 @@ const PendingBookCard = ({
       </Badge>
     </div>
 
-    <CardHeader className="p-0 relative overflow-hidden rounded-t-lg">
-      <div className="relative overflow-hidden">
+    <CardHeader className="p-0 relative rounded-t-lg shrink-0">
+      <div className="relative w-full aspect-[3/4] min-h-[200px] bg-slate-700/50 rounded-t-lg overflow-hidden">
         <img
           src={getCurrentImage(book)}
           alt={getImageAlt(book)}
-          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           onError={(e) => handleImageError(e, book)}
           crossOrigin="anonymous"
           loading="lazy"
         />
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 pointer-events-none" />
       </div>
     </CardHeader>
 
-    <CardContent className="p-4 pt-4 space-y-3 overflow-visible">
+    <CardContent className="p-4 pt-4 space-y-3 overflow-visible flex-1 min-w-0">
       <CardTitle className="text-lg leading-snug line-clamp-2 text-slate-100 min-h-[2.5rem] pt-0">
         {book.title}
       </CardTitle>
@@ -809,19 +810,19 @@ const PendingBookCard = ({
       )}
     </CardContent>
 
-    <CardFooter className="p-4 pt-0 flex gap-2 border-t border-slate-600">
+    <CardFooter className="p-4 pt-3 flex-shrink-0 flex gap-2 border-t border-slate-600 rounded-b-lg bg-slate-800/90 min-h-[52px] items-center">
       <Button
         variant="outline"
         size="sm"
         onClick={() => onPreview(book)}
-        className="flex-1 border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white"
+        className="flex-1 h-9 border-slate-500 text-slate-200 hover:bg-slate-700 hover:text-white"
       >
         <Eye className="h-4 w-4" />
       </Button>
       <Button
         size="sm"
         onClick={() => onApprove(book)}
-        className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+        className="flex-1 h-9 bg-green-600 hover:bg-green-700 text-white"
       >
         <CheckCircle className="h-4 w-4" />
       </Button>
@@ -829,7 +830,7 @@ const PendingBookCard = ({
         variant="outline"
         size="sm"
         onClick={() => onReject(book)}
-        className="flex-1 border-red-500/50 text-red-300 hover:bg-red-900/30"
+        className="flex-1 h-9 border-red-500/50 text-red-300 hover:bg-red-900/30"
       >
         <XCircle className="h-4 w-4" />
       </Button>

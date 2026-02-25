@@ -2,7 +2,15 @@ import { User, LogOut, BookOpen, Menu, ChevronDown } from "lucide-react";
 import { Button } from "./ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { categoryService } from "@/services/categoryService";
+
+// Judgment-only categories (book categories judgment dropdown mein NA use karo)
+const JUDGMENT_CATEGORIES = [
+  "Contract Law", "Property Law", "Tort Law", "Criminal Law",
+  "Constitutional Law", "Family Law", "Corporate Law", "Tax Law",
+  "Labor Law", "Environmental Law", "Intellectual Property", "Cyber Law",
+];
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,32 +21,18 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 
-const BOOK_CATEGORIES = [
-  "Constitutional Law",
-  "Criminal Law",
-  "Contract Law",
-  "Family Law",
-  "Property Law",
-  "Corporate Law",
-  "Tax Law",
-  "Labor Law",
-];
-
-const JUDGMENT_CATEGORIES = [
-  { id: "Civil", name: "Civil Cases" },
-  { id: "Criminal", name: "Criminal Cases" },
-  { id: "Constitutional", name: "Constitutional" },
-  { id: "Family", name: "Family Cases" },
-  { id: "Commercial", name: "Commercial" },
-  { id: "Labor", name: "Labor" },
-  { id: "Administrative", name: "Administrative" },
-];
-
 const Header = () => {
   const { user, isAuthenticated, signout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    categoryService.getCategories().then((res) => {
+      if (res.success && res.data) setCategories(res.data);
+    });
+  }, []);
 
   const handleAuthClick = () => {
     if (isAuthenticated) {
@@ -70,9 +64,7 @@ const Header = () => {
   const navItems = [
     { label: "Home", path: "/", isHome: true },
     { label: "Judgments", path: "/#judgments" },
-    { label: "Authors", path: "/authors" },
-    { label: "Best Sellers", path: "/bestsellers" },
-    { label: "New Releases", path: "/new-releases" },
+    { label: "Best Sellers", path: "/#bestsellers" },
   ];
 
   return (
@@ -163,7 +155,7 @@ const Header = () => {
                         Book
                       </DropdownMenuSubTrigger>
                       <DropdownMenuSubContent className="bg-slate-900 border-slate-700">
-                        {BOOK_CATEGORIES.map((cat) => (
+                        {categories.map((cat) => (
                           <DropdownMenuItem
                             key={cat}
                             className="text-white/90 focus:bg-slate-700 focus:text-white cursor-pointer"
@@ -182,19 +174,18 @@ const Header = () => {
                       <DropdownMenuSubContent className="bg-slate-900 border-slate-700">
                         {JUDGMENT_CATEGORIES.map((cat) => (
                           <DropdownMenuItem
-                            key={cat.id}
+                            key={cat}
                             className="text-white/90 focus:bg-slate-700 focus:text-white cursor-pointer"
                             onClick={() => {
                               navigate("/");
                               setTimeout(() => {
                                 const el = document.getElementById("judgments");
                                 el?.scrollIntoView({ behavior: "smooth" });
-                                const event = new CustomEvent("judgment-filter", { detail: cat.id });
-                                window.dispatchEvent(event);
+                                window.dispatchEvent(new CustomEvent("judgment-filter", { detail: cat }));
                               }, 150);
                             }}
                           >
-                            {cat.name}
+                            {cat}
                           </DropdownMenuItem>
                         ))}
                       </DropdownMenuSubContent>
@@ -266,7 +257,7 @@ const Header = () => {
                 <div className="text-white/80 text-sm font-medium px-4 py-2">Categories</div>
                 <div className="pl-6 space-y-1">
                   <div className="text-blue-300/90 text-xs font-semibold mb-2">Book</div>
-                  {BOOK_CATEGORIES.map((cat) => (
+                  {categories.map((cat) => (
                     <a
                       key={cat}
                       href={`/catalog?category=${encodeURIComponent(cat)}`}
@@ -279,32 +270,26 @@ const Header = () => {
                   <div className="text-amber-400/90 text-xs font-semibold mt-4 mb-2">Judgment</div>
                   {JUDGMENT_CATEGORIES.map((cat) => (
                     <button
-                      key={cat.id}
+                      key={cat}
                       onClick={() => {
                         setIsMenuOpen(false);
                         navigate("/");
                         setTimeout(() => {
                           document.getElementById("judgments")?.scrollIntoView({ behavior: "smooth" });
-                          window.dispatchEvent(new CustomEvent("judgment-filter", { detail: cat.id }));
+                          window.dispatchEvent(new CustomEvent("judgment-filter", { detail: cat }));
                         }, 150);
                       }}
                       className="block w-full text-left text-white/70 hover:text-white hover:bg-slate-800/50 rounded-lg px-4 py-2 text-sm"
                     >
-                      {cat.name}
+                      {cat}
                     </button>
                   ))}
                 </div>
                 <a href="/#judgments" onClick={() => { setIsMenuOpen(false); navigate("/"); setTimeout(() => document.getElementById("judgments")?.scrollIntoView({ behavior: "smooth" }), 100); }} className="text-white/80 hover:text-white hover:bg-slate-800/50 rounded-xl px-4 py-3 transition-all duration-300 text-sm font-medium border border-slate-700/30">
                   Judgments
                 </a>
-                <a href="/authors" onClick={() => setIsMenuOpen(false)} className="text-white/80 hover:text-white hover:bg-slate-800/50 rounded-xl px-4 py-3 transition-all duration-300 text-sm font-medium border border-slate-700/30">
-                  Authors
-                </a>
-                <a href="/bestsellers" onClick={() => setIsMenuOpen(false)} className="text-white/80 hover:text-white hover:bg-slate-800/50 rounded-xl px-4 py-3 transition-all duration-300 text-sm font-medium border border-slate-700/30">
+                <a href="/#bestsellers" onClick={(e) => { e.preventDefault(); setIsMenuOpen(false); navigate("/"); setTimeout(() => document.getElementById("bestsellers")?.scrollIntoView({ behavior: "smooth" }), 100); }} className="text-white/80 hover:text-white hover:bg-slate-800/50 rounded-xl px-4 py-3 transition-all duration-300 text-sm font-medium border border-slate-700/30">
                   Best Sellers
-                </a>
-                <a href="/new-releases" onClick={() => setIsMenuOpen(false)} className="text-white/80 hover:text-white hover:bg-slate-800/50 rounded-xl px-4 py-3 transition-all duration-300 text-sm font-medium border border-slate-700/30">
-                  New Releases
                 </a>
                 <div className="pt-4 border-t border-slate-800/80 flex flex-col gap-3">
                   {isAuthenticated ? (

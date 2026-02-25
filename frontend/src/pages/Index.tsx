@@ -21,7 +21,9 @@ const Index = () => {
         <BookFestival />
         <BestAuthor />
         <SpecialOffers />
-        <DailyDeals />
+        <section id="bestsellers" className="scroll-mt-24">
+          <DailyDeals />
+        </section>
         <LatestNews />
         <Newsletter />
 

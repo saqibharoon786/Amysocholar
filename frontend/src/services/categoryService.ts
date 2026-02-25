@@ -22,4 +22,9 @@ export const categoryService = {
     const response = await api.delete<ApiResponse>(`/category/${id}`);
     return response.data;
   },
+
+  removeDefaultCategories: async (): Promise<ApiResponse<{ deletedCount?: number }>> => {
+    const response = await api.post<ApiResponse<{ deletedCount?: number }>>("/category/remove-defaults");
+    return response.data;
+  },
 };

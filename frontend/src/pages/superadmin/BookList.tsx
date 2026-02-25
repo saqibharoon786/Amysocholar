@@ -5,18 +5,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { mockBooks, categories } from "@/data/mockBooks";
+import { mockBooks } from "@/data/mockBooks";
+import { categoryService } from "@/services/categoryService";
 import { Search, Filter, BookOpen, Plus, Download, Eye, Edit, Trash2, Sparkles } from "lucide-react";
 
 const BookList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [books, setBooks] = useState(mockBooks);
+  const [categories, setCategories] = useState<string[]>(["All Categories"]);
   const [newBookAdded, setNewBookAdded] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    categoryService.getCategories().then((res) => {
+      if (res.success && res.data && res.data.length) {
+        setCategories(["All Categories", ...res.data]);
+      }
+    });
   }, []);
 
   // Listen for new book uploads from localStorage or event

@@ -1,26 +1,20 @@
 const Category = require("../models/category.model");
 const AppError = require("../utils/appError");
 
-const DEFAULT_CATEGORIES = [
-  "Law Books", "Academic", "Reference", "Fiction", "Non-Fiction", "Science", "Technology", "History",
-  "Biography", "Self-Help", "Business", "Religion",
-  "Contract Law", "Property Law", "Tort Law", "Criminal Law", "Constitutional Law", "Family Law", "Corporate Law", "Tax Law", "Labor Law",
+// Dummy/legacy names – in ko na to API me bhejo na dropdown me dikhao (sirf superadmin-created dikhen)
+const LEGACY_DEFAULT_NAMES = [
+  "Law Books", "Academic", "Biography", "Business", "Constitutional Law", "Contract Law", "Corporate Law",
+  "Criminal Law", "Family Law", "Fiction", "History", "Labor Law", "Non-Fiction", "Property Law", "Reference",
+  "Religion", "Science", "Self-Help", "Tax Law", "Technology", "Tort Law", "book", "law",
 ];
 
-// List all categories (for book & judgment dropdowns – public or auth)
+// List all categories – sirf wohi jo superadmin ne create ki; dummy/legacy names filter out
 const getCategories = async (req, res, next) => {
   try {
-    let categories = await Category.find().sort({ name: 1 }).select("name slug");
-    if (categories.length === 0) {
-      await Category.insertMany(
-        DEFAULT_CATEGORIES.map((name) => ({
-          name,
-          slug: name.toLowerCase().replace(/\s+/g, "-"),
-        }))
-      );
-      categories = await Category.find().sort({ name: 1 }).select("name slug");
-    }
-    const names = categories.map((c) => c.name);
+    const categories = await Category.find().sort({ name: 1 }).select("name slug");
+    const names = categories
+      .map((c) => c.name)
+      .filter((name) => !LEGACY_DEFAULT_NAMES.includes(name));
     res.status(200).json({
       success: true,
       data: names,
@@ -73,8 +67,22 @@ const deleteCategory = async (req, res, next) => {
   }
 };
 
+const removeDefaultCategories = async (req, res, next) => {
+  try {
+    const result = await Category.deleteMany({ name: { $in: LEGACY_DEFAULT_NAMES } });
+    res.status(200).json({
+      success: true,
+      message: "Default categories removed. Only superadmin-created categories remain.",
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getCategories,
   createCategory,
   deleteCategory,
+  removeDefaultCategories,
 };

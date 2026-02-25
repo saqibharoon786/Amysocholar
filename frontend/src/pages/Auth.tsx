@@ -84,8 +84,9 @@ const Auth = () => {
     }
   }, [user]);
 
-  // Show loading while checking authentication
-  if (isLoadingUser) {
+  // Sirf tab loading dikhao jab token ho aur user abhi load ho raha ho; logout ke baad form turant dikhe
+  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('authToken');
+  if (isLoadingUser && hasToken) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
         <div className="flex flex-col items-center gap-4">

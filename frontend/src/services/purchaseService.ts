@@ -37,6 +37,7 @@ export interface PurchaseFilters {
   type?: 'book' | 'judgment';
   paymentStatus?: string;
   userId?: string;
+  sellerId?: string;
 }
 
 export interface PurchaseStats {

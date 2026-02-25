@@ -102,6 +102,7 @@ interface JudgmentFilters {
   sortBy: string;
   sortOrder: "asc" | "desc";
   caseType?: string;
+  category?: string;
 }
 
 // Professional Book-like Text Viewer - FIXED with proper pagination (10 paragraphs per page)
@@ -1744,16 +1745,20 @@ const JudgmentSection = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Categories with design theme
-  const categories = [
+  // Judgment section – book categories NA use karo; judgment ke liye fixed law types
+  const JUDGMENT_CATEGORIES = [
+    "Contract Law", "Property Law", "Tort Law", "Criminal Law",
+    "Constitutional Law", "Family Law", "Corporate Law", "Tax Law",
+    "Labor Law", "Environmental Law", "Intellectual Property", "Cyber Law",
+  ];
+  const tabColors = [
+    "from-[#8B4513] to-[#A0522D]", "from-[#800020] to-[#8B4513]", "from-[#1A365D] to-[#2E8B57]",
+    "from-[#A0522D] to-[#800020]", "from-[#1A365D] to-[#D4AF37]", "from-[#2E8B57] to-[#1A365D]",
+    "from-[#800020] to-[#D4AF37]", "from-[#8B4513] to-[#D4AF37]",
+  ];
+  const categories: { _id: string; name: string; color: string }[] = [
     { _id: "all", name: "All Judgments", color: "from-[#8B4513] to-[#D4AF37]" },
-    { _id: "Civil", name: "Civil Cases", color: "from-[#8B4513] to-[#A0522D]" },
-    { _id: "Criminal", name: "Criminal Cases", color: "from-[#800020] to-[#8B4513]" },
-    { _id: "Constitutional", name: "Constitutional", color: "from-[#1A365D] to-[#2E8B57]" },
-    { _id: "Family", name: "Family Cases", color: "from-[#A0522D] to-[#800020]" },
-    { _id: "Commercial", name: "Commercial", color: "from-[#1A365D] to-[#D4AF37]" },
-    { _id: "Administrative", name: "Administrative", color: "from-[#2E8B57] to-[#1A365D]" },
-    { _id: "Labor", name: "Labor", color: "from-[#800020] to-[#D4AF37]" },
+    ...JUDGMENT_CATEGORIES.map((name, i) => ({ _id: name, name, color: tabColors[i % tabColors.length] })),
   ];
 
   // Listen for category filter from header nav
@@ -1778,7 +1783,7 @@ const JudgmentSection = () => {
       };
 
       if (activeTab !== "all") {
-        filters.caseType = activeTab;
+        filters.category = activeTab;
       }
 
       const response = await JudgmentService.getAllJudgments(filters);

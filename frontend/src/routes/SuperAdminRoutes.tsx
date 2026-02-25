@@ -13,6 +13,8 @@ import ProfileSettings from "@/pages/admin/ProfileSettings";
 import ApproveBooks from "@/pages/superadmin/ApproveBooks";
 import UserManagement from "@/pages/superadmin/UserManagement";
 import Categories from "@/pages/admin/Categories";
+import AdminBookSales from "@/pages/superadmin/AdminBookSales";
+import BookFeedback from "@/pages/admin/BookFeedback";
 
 const SuperAdminRoutes = () => {
   return (
@@ -34,6 +36,8 @@ const SuperAdminRoutes = () => {
         <Route path="approve" element={<ApproveBooks />} />
         <Route path="users" element={<UserManagement />} />
         <Route path="categories" element={<Categories />} />
+        <Route path="admin-book-sales" element={<AdminBookSales />} />
+        <Route path="feedback" element={<BookFeedback />} />
         <Route path="profile" element={<ProfileSettings />} />
       </Route>
     </Routes>

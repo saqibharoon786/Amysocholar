@@ -1,6 +1,7 @@
 // layouts/SuperAdminLayout.tsx
 import { Link, useNavigate, Outlet, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 import {
   BookOpen,
@@ -14,6 +15,8 @@ import {
   Gavel,
   Users,
   FolderPlus,
+  Receipt,
+  MessageSquare,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -21,6 +24,7 @@ import { cn } from "@/lib/utils";
 const SuperAdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
 
   const navItems = [
     { name: "Dashboard", href: "/superadmin/dashboard", icon: LayoutDashboard },
@@ -30,13 +34,15 @@ const SuperAdminLayout = () => {
     { name: "Upload Judgment", href: "/superadmin/upload-judgment", icon: Gavel },
     { name: "Book Shop", href: "/superadmin/shop", icon: ShoppingCart },
     { name: "Approve Books", href: "/superadmin/approve", icon: ShieldCheck },
+    { name: "Admin Book Sales", href: "/superadmin/admin-book-sales", icon: Receipt },
+    { name: "Book Feedback", href: "/superadmin/feedback", icon: MessageSquare },
     { name: "Profile", href: "/superadmin/profile", icon: User },
   ];
 
   const isActive = (href: string) => location.pathname === href;
 
   const handleLogout = () => {
-    navigate("/");
+    logout().then(() => navigate("/"));
   };
 
   return (

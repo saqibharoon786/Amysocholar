@@ -86,7 +86,29 @@ export default function Categories() {
             New category will be available in book and judgment forms.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <Button
+            type="button"
+            variant="outline"
+            className="border-amber-500/50 text-amber-400 hover:bg-amber-500/10"
+            disabled={submitting}
+            onClick={async () => {
+              setSubmitting(true);
+              try {
+                const res = await categoryService.removeDefaultCategories();
+                if (res.success) {
+                  toast({ title: "Done", description: res.message || "Default categories removed." });
+                  fetchCategories();
+                } else toast({ title: "Error", description: res.message, variant: "destructive" });
+              } catch (e: any) {
+                toast({ title: "Error", description: e?.response?.data?.message || "Failed", variant: "destructive" });
+              } finally {
+                setSubmitting(false);
+              }
+            }}
+          >
+            Remove default / legacy categories (sirf apni create ki rehain gi)
+          </Button>
           <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-3">
             <div className="flex-1 min-w-[200px] space-y-2">
               <Label htmlFor="category-name" style={{ color: "#cbd5e1" }}>Category name</Label>

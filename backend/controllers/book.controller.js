@@ -1,5 +1,6 @@
 const Book = require('../models/book.model');
 const Purchase = require('../models/purchases.model');
+const BookReview = require('../models/bookReview.model');
 const AppError = require('../utils/appError');
 
 // Upload book (Admin and SuperAdmin)
@@ -875,10 +876,10 @@ const incrementViewCount = async (req, res, next) => {
   }
 };
 
-// Update book rating
+// Update book rating (and save review/feedback with optional comment)
 const updateBookRating = async (req, res, next) => {
   try {
-    const { rating } = req.body;
+    const { rating, comment } = req.body;
     
     if (!rating || rating < 1 || rating > 5) {
       return next(new AppError('Please provide a valid rating between 1 and 5', 400));
@@ -890,26 +891,43 @@ const updateBookRating = async (req, res, next) => {
       return next(new AppError('Book not found', 404));
     }
 
-    // Check if user has purchased the book
-    const purchase = await Purchase.findOne({
-      user: req.user.id,
-      book: book._id,
-      paymentStatus: 'completed'
-    });
-
-    if (!purchase) {
-      return next(new AppError('You must purchase the book before rating', 403));
-    }
-
+    // Purchase ki zaroorat nahi – jo bhi read karke rating/comment de, us admin ko dikhega jis ki book hai
     await book.updateRating(parseFloat(rating));
 
+    await BookReview.findOneAndUpdate(
+      { user: req.user.id, book: book._id },
+      { rating: parseFloat(rating), comment: (comment && String(comment).trim()) || '' },
+      { upsert: true, new: true, runValidators: false }
+    );
+
+    const updatedBook = await Book.findById(book._id).select('averageRating reviewCount');
     res.status(200).json({
       success: true,
-      message: 'Rating updated successfully',
-      data: { 
-        averageRating: book.averageRating,
-        reviewCount: book.reviewCount 
+      message: 'Rating updated successfully. Your review will appear in the book owner\'s feedback.',
+      data: {
+        averageRating: updatedBook?.averageRating ?? book.averageRating,
+        reviewCount: updatedBook?.reviewCount ?? book.reviewCount
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get reviews/feedback for books I uploaded (admin/superadmin)
+const getMyBookReviews = async (req, res, next) => {
+  try {
+    const uploaderId = req.user._id || req.user.id;
+    const books = await Book.find({ uploader: uploaderId }).select('_id');
+    const bookIds = books.map((b) => b._id);
+    const reviews = await BookReview.find({ book: { $in: bookIds } })
+      .populate('user', 'firstName lastName email phone')
+      .populate('book', 'title')
+      .sort({ createdAt: -1 })
+      .lean();
+    res.status(200).json({
+      success: true,
+      data: { reviews: reviews || [] },
     });
   } catch (error) {
     next(error);
@@ -988,6 +1006,7 @@ module.exports = {
   getNewReleases,
   incrementViewCount,
   updateBookRating,
+  getMyBookReviews,
   getAllCategories,
   getPopularCategories
 };

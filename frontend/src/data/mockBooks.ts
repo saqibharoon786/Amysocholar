@@ -153,13 +153,3 @@ export const mockBooks: Book[] = [
     approved: true
   }
 ];
-
-export const categories = [
-  "All Categories",
-  "Constitutional Law",
-  "Criminal Law",
-  "Contract Law",
-  "Family Law",
-  "Property Law",
-  "Corporate Law"
-];

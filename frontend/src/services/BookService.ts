@@ -377,8 +377,13 @@ updateBook: async (id: string): Promise<ApiResponse> => {
     return response.data;
   },
 
-  updateBookRating: async (id: string, rating: number): Promise<ApiResponse<{ averageRating: number; reviewCount: number }>> => {
-    const response = await api.patch<ApiResponse<{ averageRating: number; reviewCount: number }>>(`/book/${id}/rating`, { rating });
+  updateBookRating: async (id: string, rating: number, comment?: string): Promise<ApiResponse<{ averageRating: number; reviewCount: number }>> => {
+    const response = await api.patch<ApiResponse<{ averageRating: number; reviewCount: number }>>(`/book/${id}/rating`, { rating, comment: comment || '' });
+    return response.data;
+  },
+
+  getMyBookReviews: async (): Promise<ApiResponse<{ reviews: { _id: string; user: { firstName?: string; lastName?: string; email?: string }; book: { title?: string }; rating: number; comment?: string; createdAt: string }[] }>> => {
+    const response = await api.get<ApiResponse<{ reviews: any[] }>>('/book/my/books-reviews');
     return response.data;
   },
 

@@ -10,6 +10,7 @@ import {
   Upload, 
   ShoppingCart, 
   User,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ const AdminLayout = () => {
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Upload Book', href: '/admin/upload', icon: Upload },
     { name: 'Book Shop', href: '/admin/shop', icon: ShoppingCart },
+    { name: 'Book Feedback', href: '/admin/feedback', icon: MessageSquare },
     { name: 'Profile', href: '/admin/profile', icon: User },
   ];
 

@@ -29,7 +29,8 @@ const {
   incrementViewCount,
   updateBookRating,
   getAllCategories,
-  getPopularCategories
+  getPopularCategories,
+  getMyBookReviews
 } = require("../controllers/book.controller");
 
 // ================== 📘 PUBLIC ROUTES ==================
@@ -49,12 +50,16 @@ router.get("/categories/popular", getPopularCategories);
 
 
 // ================== 👤 AUTHENTICATED ROUTES ==================
-router.use(protect); 
+router.use(protect);
+
+// Specific paths first (/:id routes se pehle) taake /my/books-reviews sahi match ho
+router.get("/my/books", isAdmin, getMyBooks);
+router.get("/my/books-reviews", isAdmin, getMyBookReviews);
+
 router.get("/:id/read", readFullBook);
 
 // ================== 👩‍💼 ADMIN ROUTES ==================
 router.post("/upload-book", isAdmin, uploadFiles, uploadBook);
-router.get("/my/books", isAdmin, getMyBooks);
 router.patch("/update/my/books/:id", isAdmin, updateBook);
 router.delete("/my/books/:id", isAdmin, deleteBook);
 
@@ -69,6 +74,7 @@ router.patch("/admin/:id/reject", isSuperAdmin, rejectBook);
 router.post("/:id/purchase", isCustomer, purchaseBook);
 router.get("/my/purchases", isCustomer, getMyPurchasedBooks);
 router.get("/:id/check-purchase", isCustomer, checkPurchaseStatus);
-router.patch("/:id/rating", isCustomer, updateBookRating);
+// Rating: koi bhi logged-in user jo book purchase kar chuka ho (customer/admin/superadmin) submit kar sakta hai
+router.patch("/:id/rating", protect, updateBookRating);
 
 module.exports = router;

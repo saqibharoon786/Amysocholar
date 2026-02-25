@@ -102,7 +102,7 @@ const BookReader = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
   const format = searchParams.get("format") || "text";
 
   // Book content state
@@ -250,18 +250,17 @@ const BookReader = () => {
     return () => clearTimeout(timer);
   }, [bookContent, fontSize, lineHeight, fontFamily, columnCount, calculatePages]);
 
-  // Load book content
+  // Load book content (auth resolve hone tak wait karo, phir redirect/login check)
   useEffect(() => {
-    if (id) {
-      if (!isAuthenticated) {
-        // Redirect to login if not authenticated
-        toast.error("Please log in to read this book");
-        navigate('/auth', { state: { returnTo: `/book/${id}/read?format=${format}` } });
-        return;
-      }
-      loadBookContent();
+    if (!id) return;
+    if (authLoading) return;
+    if (!isAuthenticated) {
+      toast.error("Please log in to read this book");
+      navigate('/auth', { state: { returnTo: `/book/${id}/read?format=${format}` } });
+      return;
     }
-  }, [id, isAuthenticated, format]);
+    loadBookContent();
+  }, [id, isAuthenticated, authLoading, format]);
 
   const loadBookContent = async () => {
     try {

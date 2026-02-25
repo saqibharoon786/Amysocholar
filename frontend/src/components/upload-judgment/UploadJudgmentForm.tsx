@@ -80,7 +80,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { JudgmentService, type Judgment as ApiJudgment, type JudgmentFilters } from "@/services/JudgmentService";
 import { constructImageUrl } from "@/services/BookService";
-import { categoryService } from "@/services/categoryService";
+
+// Judgment-only categories (books ke superadmin categories yahan use NA karo)
+const JUDGMENT_CATEGORIES = [
+  "Contract Law", "Property Law", "Tort Law", "Criminal Law",
+  "Constitutional Law", "Family Law", "Corporate Law", "Tax Law",
+  "Labor Law", "Environmental Law", "Intellectual Property", "Cyber Law",
+];
 
 interface UploadJudgmentFormProps {
   isLoading: boolean;
@@ -211,12 +217,6 @@ const UploadJudgmentForm = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedJudgment, setSelectedJudgment] = useState<Judgment | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [categories, setCategories] = useState<string[]>([]);
-  useEffect(() => {
-    categoryService.getCategories().then((res) => {
-      if (res.success && res.data) setCategories(res.data);
-    });
-  }, []);
 
   const pdfFileRef = useRef<HTMLInputElement>(null);
   const coverImagesRef = useRef<HTMLInputElement>(null);
@@ -671,7 +671,7 @@ const UploadJudgmentForm = ({
                         color: '#f1f5f9'
                       }}>
                         <SelectItem key="all-categories" value="all" className="text-slate-100 focus:bg-slate-600 focus:text-white">All Categories</SelectItem>
-                        {categories.map((category) => (
+                        {JUDGMENT_CATEGORIES.map((category) => (
                           <SelectItem key={category} value={category} className="text-slate-100 focus:bg-slate-600 focus:text-white">
                             {category}
                           </SelectItem>
@@ -1316,7 +1316,7 @@ const UploadJudgmentForm = ({
                                 borderColor: '#374151',
                                 color: '#f1f5f9'
                               }}>
-                                {categories.map((category) => (
+                                {JUDGMENT_CATEGORIES.map((category) => (
                                   <SelectItem key={`category-${category}`} value={category} className="text-slate-100 focus:bg-slate-600 focus:text-white">
                                     {category}
                                   </SelectItem>

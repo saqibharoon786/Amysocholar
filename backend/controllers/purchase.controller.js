@@ -187,7 +187,8 @@ const getAllPurchases = async (req, res, next) => {
 
     const purchases = await Purchase.find(query)
       .populate('user', 'firstName lastName email')
-      .populate('book judgment seller')
+      .populate('book judgment')
+      .populate('seller', 'firstName lastName email role wallet')
       .populate('payment')
       .limit(limit * 1)
       .skip((page - 1) * limit)
