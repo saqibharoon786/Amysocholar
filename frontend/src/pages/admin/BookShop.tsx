@@ -88,7 +88,7 @@ const BookShop = () => {
         }
       } else {
         if (showMyBooksOnly && user) {
-          // Use my books with status filter
+          // My books with status filter: pending | rejected | approved | all
           const response = await BookService.getMyBooks(
             statusFilter === "all" ? undefined : statusFilter,
             1,
@@ -98,12 +98,12 @@ const BookShop = () => {
             setBooks(response.data.books || []);
           }
         } else {
-          // Use the correct all books API with status filter
-          const response = await BookService.getMyBooks({
-            status: statusFilter === "all" ? undefined : statusFilter,
-            limit: 50
+          // All books with status filter: use getAllBooks so filter works correctly
+          const response = await BookService.getAllBooks({
+            page: 1,
+            limit: 50,
+            status: statusFilter === "all" ? "all" : statusFilter,
           });
-
           if (response.success && response.data) {
             setBooks(response.data.books || []);
           }

@@ -79,14 +79,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { JudgmentService, type Judgment as ApiJudgment, type JudgmentFilters } from "@/services/JudgmentService";
+import { judgmentCategoryService } from "@/services/judgmentCategoryService";
 import { constructImageUrl } from "@/services/BookService";
-
-// Judgment-only categories (books ke superadmin categories yahan use NA karo)
-const JUDGMENT_CATEGORIES = [
-  "Contract Law", "Property Law", "Tort Law", "Criminal Law",
-  "Constitutional Law", "Family Law", "Corporate Law", "Tax Law",
-  "Labor Law", "Environmental Law", "Intellectual Property", "Cyber Law",
-];
 
 interface UploadJudgmentFormProps {
   isLoading: boolean;
@@ -217,6 +211,7 @@ const UploadJudgmentForm = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedJudgment, setSelectedJudgment] = useState<Judgment | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [judgmentCategories, setJudgmentCategories] = useState<string[]>([]);
 
   const pdfFileRef = useRef<HTMLInputElement>(null);
   const coverImagesRef = useRef<HTMLInputElement>(null);
@@ -235,6 +230,12 @@ const UploadJudgmentForm = ({
     const first = j.coverImages?.[0];
     return first && String(first).trim() ? constructImageUrl(first) : "/placeholder-book.png";
   };
+
+  useEffect(() => {
+    judgmentCategoryService.getJudgmentCategories().then((res) => {
+      if (res.success && res.data) setJudgmentCategories(res.data);
+    });
+  }, []);
 
   // Fetch judgments from database
   const fetchJudgments = async () => {
@@ -671,7 +672,7 @@ const UploadJudgmentForm = ({
                         color: '#f1f5f9'
                       }}>
                         <SelectItem key="all-categories" value="all" className="text-slate-100 focus:bg-slate-600 focus:text-white">All Categories</SelectItem>
-                        {JUDGMENT_CATEGORIES.map((category) => (
+                        {judgmentCategories.map((category) => (
                           <SelectItem key={category} value={category} className="text-slate-100 focus:bg-slate-600 focus:text-white">
                             {category}
                           </SelectItem>
@@ -1163,31 +1164,6 @@ const UploadJudgmentForm = ({
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="caseNumber" className="font-medium flex items-center gap-1" style={{ color: '#cbd5e1' }}>
-                              Case Number <span style={{ color: '#ef4444' }}>*</span>
-                            </Label>
-                            <Input
-                              id="caseNumber"
-                              value={formData.caseNumber}
-                              onChange={(e) => handleInputChange('caseNumber', e.target.value)}
-                              required
-                              className="h-11 rounded-lg transition-colors"
-                              placeholder="Enter case number"
-                              style={{
-                                backgroundColor: '#1f2937',
-                                borderColor: '#374151',
-                                color: '#f1f5f9'
-                              }}
-                            />
-                            {formErrors.caseNumber && (
-                              <p className="text-sm flex items-center gap-1 mt-1" style={{ color: '#ef4444' }}>
-                                <AlertCircle className="h-3 w-3" />
-                                {formErrors.caseNumber}
-                              </p>
-                            )}
-                          </div>
-
-                          <div className="space-y-2">
                             <Label htmlFor="parties" className="font-medium flex items-center gap-1" style={{ color: '#cbd5e1' }}>
                               Parties <span style={{ color: '#ef4444' }}>*</span>
                             </Label>
@@ -1210,24 +1186,6 @@ const UploadJudgmentForm = ({
                                 {formErrors.parties}
                               </p>
                             )}
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label htmlFor="caseTitle" className="font-medium" style={{ color: '#cbd5e1' }}>
-                              Case Title
-                            </Label>
-                            <Input
-                              id="caseTitle"
-                              value={formData.caseTitle}
-                              onChange={(e) => handleInputChange('caseTitle', e.target.value)}
-                              className="h-11 rounded-lg transition-colors"
-                              placeholder="Enter case title"
-                              style={{
-                                backgroundColor: '#1f2937',
-                                borderColor: '#374151',
-                                color: '#f1f5f9'
-                              }}
-                            />
                           </div>
                         </div>
 
@@ -1265,39 +1223,6 @@ const UploadJudgmentForm = ({
                             )}
                           </div>
 
-                          {/* Case Type Select - FIXED */}
-                          <div className="space-y-2">
-                            <Label htmlFor="caseType" className="font-medium flex items-center gap-1" style={{ color: '#cbd5e1' }}>
-                              Case Type <span style={{ color: '#ef4444' }}>*</span>
-                            </Label>
-                            <Select value={formData.caseType} onValueChange={(v) => handleInputChange('caseType', v)}>
-                              <SelectTrigger className="h-11 rounded-lg transition-colors" style={{
-                                backgroundColor: '#1f2937',
-                                borderColor: '#374151',
-                                color: '#f1f5f9'
-                              }}>
-                                <SelectValue placeholder="Select case type" />
-                              </SelectTrigger>
-                              <SelectContent style={{
-                                backgroundColor: '#1f2937',
-                                borderColor: '#374151',
-                                color: '#f1f5f9'
-                              }}>
-                                {CASE_TYPES.map(type => (
-                                  <SelectItem key={`type-${type}`} value={type}>
-                                    {type}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            {formErrors.caseType && (
-                              <p className="text-sm flex items-center gap-1 mt-1" style={{ color: '#ef4444' }}>
-                                <AlertCircle className="h-3 w-3" />
-                                {formErrors.caseType}
-                              </p>
-                            )}
-                          </div>
-
                           {/* Category Select - from API, visible text */}
                           <div className="space-y-2">
                             <Label htmlFor="category" className="font-medium flex items-center gap-1" style={{ color: '#cbd5e1' }}>
@@ -1316,7 +1241,7 @@ const UploadJudgmentForm = ({
                                 borderColor: '#374151',
                                 color: '#f1f5f9'
                               }}>
-                                {JUDGMENT_CATEGORIES.map((category) => (
+                                {judgmentCategories.map((category) => (
                                   <SelectItem key={`category-${category}`} value={category} className="text-slate-100 focus:bg-slate-600 focus:text-white">
                                     {category}
                                   </SelectItem>

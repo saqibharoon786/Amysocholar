@@ -14,6 +14,7 @@ const commissionRoutes = require("./commission.routes");
 const verificationRoutes = require("./verification.routes");
 const purchasesRoutes = require("./purchases.routes");
 const categoryRoutes = require("./category.routes");
+const judgmentCategoryRoutes = require("./judgmentCategory.routes");
 
 // API BASE PATHS
 router.use("/auth", authRoutes);
@@ -28,5 +29,6 @@ router.use("/commissions", commissionRoutes);
 router.use("/verification", verificationRoutes);
 router.use("/purchase", purchasesRoutes);
 router.use("/category", categoryRoutes);
+router.use("/judgment-category", judgmentCategoryRoutes);
 
 module.exports = router;

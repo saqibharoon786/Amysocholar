@@ -45,6 +45,7 @@ import {
   ZoomOut
 } from "lucide-react";
 import { JudgmentService } from "@/services/JudgmentService";
+import { judgmentCategoryService } from "@/services/judgmentCategoryService";
 
 // Fallback color scheme used by this component when a global theme is not provided
 const COLOR_SCHEME = {
@@ -1065,11 +1066,11 @@ const JudgmentCard = ({
             </div>
           </Badge>
           
-          {/* Court Badge */}
-          <Badge className="bg-white/20 backdrop-blur-md text-white px-2.5 py-1.5 rounded-full text-xs font-semibold border border-white/30 shadow-lg">
-            <div className="flex items-center gap-1.5">
-              <Shield className="h-3 w-3" />
-              <span>{judgment.court?.split(" ")[0] || 'Court'}</span>
+          {/* Court Badge - Full court name */}
+          <Badge className="bg-white/20 backdrop-blur-md text-white px-2.5 py-1.5 rounded-full text-xs font-semibold border border-white/30 shadow-lg max-w-[45%]">
+            <div className="flex items-center gap-1.5 truncate">
+              <Shield className="h-3 w-3 shrink-0" />
+              <span className="truncate" title={judgment.court || 'Court'}>{judgment.court || 'Court'}</span>
             </div>
           </Badge>
         </div>
@@ -1084,10 +1085,10 @@ const JudgmentCard = ({
         {/* Quick Stats */}
         <div className="absolute bottom-4 left-4">
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-sm px-2.5 py-1 rounded-full">
-              <User className="h-3.5 w-3.5 text-white/90" />
-              <span className="text-xs font-medium text-white">
-                {judgment.judge?.split(',')[0]?.split(' ')[0] || "Judge"}
+            <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-sm px-2.5 py-1 rounded-full max-w-[140px]">
+              <User className="h-3.5 w-3.5 text-white/90 shrink-0" />
+              <span className="text-xs font-medium text-white truncate" title={judgment.judge || "Judge"}>
+                {judgment.judge?.split(',')[0]?.trim() || judgment.judge || "Judge"}
               </span>
             </div>
             <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-sm px-2.5 py-1 rounded-full">
@@ -1135,10 +1136,18 @@ const JudgmentCard = ({
       {/* Card Content */}
       <div className="p-5">
         {/* Case Citation */}
-        <div className="mb-3">
+        <div className="mb-2">
           <h3 className="font-bold text-[#2C1810] text-lg leading-tight line-clamp-2 group-hover:text-[#8B4513] transition-colors duration-300">
             {judgment.citation}
           </h3>
+        </div>
+
+        {/* Judge name - full name below citation */}
+        <div className="flex items-center gap-1.5 mb-3 text-sm text-[#4A3520]">
+          <User className="h-3.5 w-3.5 shrink-0 text-[#7A6956]" />
+          <span className="font-medium truncate" title={judgment.judge || "N/A"}>
+            {judgment.judge?.split(',')[0]?.trim() || judgment.judge || "Judge name N/A"}
+          </span>
         </div>
         
         {/* Case Title */}
@@ -1741,16 +1750,11 @@ const JudgmentSection = () => {
   const [activeFileType, setActiveFileType] = useState<"text" | "pdf" | null>(null);
   const [loadingFile, setLoadingFile] = useState(false);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
-  
+  const [judgmentCategoryNames, setJudgmentCategoryNames] = useState<string[]>([]);
+
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Judgment section – book categories NA use karo; judgment ke liye fixed law types
-  const JUDGMENT_CATEGORIES = [
-    "Contract Law", "Property Law", "Tort Law", "Criminal Law",
-    "Constitutional Law", "Family Law", "Corporate Law", "Tax Law",
-    "Labor Law", "Environmental Law", "Intellectual Property", "Cyber Law",
-  ];
   const tabColors = [
     "from-[#8B4513] to-[#A0522D]", "from-[#800020] to-[#8B4513]", "from-[#1A365D] to-[#2E8B57]",
     "from-[#A0522D] to-[#800020]", "from-[#1A365D] to-[#D4AF37]", "from-[#2E8B57] to-[#1A365D]",
@@ -1758,8 +1762,14 @@ const JudgmentSection = () => {
   ];
   const categories: { _id: string; name: string; color: string }[] = [
     { _id: "all", name: "All Judgments", color: "from-[#8B4513] to-[#D4AF37]" },
-    ...JUDGMENT_CATEGORIES.map((name, i) => ({ _id: name, name, color: tabColors[i % tabColors.length] })),
+    ...judgmentCategoryNames.map((name, i) => ({ _id: name, name, color: tabColors[i % tabColors.length] })),
   ];
+
+  useEffect(() => {
+    judgmentCategoryService.getJudgmentCategories().then((res) => {
+      if (res.success && res.data) setJudgmentCategoryNames(res.data);
+    });
+  }, []);
 
   // Listen for category filter from header nav
   useEffect(() => {

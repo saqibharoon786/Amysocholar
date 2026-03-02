@@ -4,13 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { categoryService } from "@/services/categoryService";
-
-// Judgment-only categories (book categories judgment dropdown mein NA use karo)
-const JUDGMENT_CATEGORIES = [
-  "Contract Law", "Property Law", "Tort Law", "Criminal Law",
-  "Constitutional Law", "Family Law", "Corporate Law", "Tax Law",
-  "Labor Law", "Environmental Law", "Intellectual Property", "Cyber Law",
-];
+import { judgmentCategoryService } from "@/services/judgmentCategoryService";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,10 +21,16 @@ const Header = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
+  const [judgmentCategories, setJudgmentCategories] = useState<string[]>([]);
 
   useEffect(() => {
     categoryService.getCategories().then((res) => {
       if (res.success && res.data) setCategories(res.data);
+    });
+  }, []);
+  useEffect(() => {
+    judgmentCategoryService.getJudgmentCategories().then((res) => {
+      if (res.success && res.data) setJudgmentCategories(res.data);
     });
   }, []);
 
@@ -172,7 +172,7 @@ const Header = () => {
                         Judgment
                       </DropdownMenuSubTrigger>
                       <DropdownMenuSubContent className="bg-slate-900 border-slate-700">
-                        {JUDGMENT_CATEGORIES.map((cat) => (
+                        {judgmentCategories.map((cat) => (
                           <DropdownMenuItem
                             key={cat}
                             className="text-white/90 focus:bg-slate-700 focus:text-white cursor-pointer"
@@ -268,7 +268,7 @@ const Header = () => {
                     </a>
                   ))}
                   <div className="text-amber-400/90 text-xs font-semibold mt-4 mb-2">Judgment</div>
-                  {JUDGMENT_CATEGORIES.map((cat) => (
+                  {judgmentCategories.map((cat) => (
                     <button
                       key={cat}
                       onClick={() => {

@@ -314,13 +314,24 @@ const getDashboardStats = async (req, res, next) => {
       });
     }
     if (req.user.role === 'admin') {
-      const [myBooks, myPending] = await Promise.all([
+      const [myBooks, myPending, earningsAgg] = await Promise.all([
         Book.countDocuments({ uploader: req.user.id, isDeleted: { $ne: true } }),
         Book.countDocuments({ uploader: req.user.id, status: 'pending', isDeleted: { $ne: true } }),
+        Purchase.aggregate([
+          { $match: { seller: req.user._id, paymentStatus: 'completed' } },
+          { $group: { _id: null, totalOrders: { $sum: 1 }, myEarnings: { $sum: '$commission.sellerAmount' }, totalRevenue: { $sum: '$amount' } } },
+        ]),
       ]);
+      const rev = earningsAgg[0];
       return res.status(200).json({
         success: true,
-        data: { totalBooks: myBooks, pendingBooks: myPending },
+        data: {
+          totalBooks: myBooks,
+          pendingBooks: myPending,
+          totalOrders: rev?.totalOrders || 0,
+          totalRevenue: rev?.totalRevenue || 0,
+          myEarnings: rev?.myEarnings || 0,
+        },
       });
     }
     return next(new AppError('Unauthorized', 403));

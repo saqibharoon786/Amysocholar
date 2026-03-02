@@ -52,6 +52,7 @@ const Dashboard = () => {
     myPendingBooks?: number;
     totalJudgments?: number;
     myJudgments?: number;
+    myEarnings?: number;
   } | null>(null);
 
   useEffect(() => {
@@ -108,13 +109,14 @@ const Dashboard = () => {
         { id: 'my-pending', title: "My Pending", value: String(dashboardData.myPendingBooks ?? 0), icon: Clock, color: colors.warning, bgColor: '#D97706', description: "Your books awaiting approval", gradient: colors.gradients.orange, trend: 'up' as const, change: '', revenue: '' },
         { id: 'total-judgments', title: "Total Judgments", value: String(dashboardData.totalJudgments ?? 0), icon: FileText, color: colors.success, bgColor: '#059669', description: "All judgments on platform", gradient: colors.gradients.green, trend: 'up' as const, change: '', revenue: '' },
         { id: 'total-orders', title: "Total Orders", value: String(dashboardData.totalOrders ?? 0), icon: ShoppingCart, color: colors.info, bgColor: '#7C3AED', description: "Completed purchases", gradient: colors.gradients.purple, trend: 'up' as const, change: '', revenue: `PKR ${(dashboardData.totalRevenue ?? 0).toLocaleString()}` },
+        { id: 'platform-revenue', title: "Platform Earnings", value: `PKR ${(dashboardData.totalRevenue ?? 0).toLocaleString()}`, icon: DollarSign, color: colors.success, bgColor: '#059669', description: "Total revenue (completed payments)", gradient: colors.gradients.green, trend: 'up' as const, change: '', revenue: `PKR ${(dashboardData.totalRevenue ?? 0).toLocaleString()}` },
       ]
     : !isSuperAdmin && dashboardData
     ? [
         { id: 'total-books', title: "My Book Uploads", value: String(dashboardData.totalBooks ?? 0), icon: BookOpen, color: colors.accentLight, bgColor: colors.accent, description: "Books you uploaded", gradient: colors.gradients.blue, trend: 'up' as const, change: '', revenue: '' },
         { id: 'pending-books', title: "Pending", value: String(dashboardData.pendingBooks ?? 0), icon: Upload, color: colors.warning, bgColor: '#D97706', description: "Awaiting superadmin approval", gradient: colors.gradients.orange, trend: 'up' as const, change: '', revenue: '' },
-        { id: 'placeholder2', title: "—", value: "—", icon: BarChart3, color: colors.text.muted, bgColor: '#334155', description: "—", gradient: colors.gradients.dark, trend: 'up' as const, change: '', revenue: '' },
-        { id: 'placeholder3', title: "—", value: "—", icon: Activity, color: colors.text.muted, bgColor: '#334155', description: "—", gradient: colors.gradients.dark, trend: 'up' as const, change: '', revenue: '' },
+        { id: 'total-orders', title: "My Orders", value: String(dashboardData.totalOrders ?? 0), icon: ShoppingCart, color: colors.success, bgColor: '#059669', description: "Your completed sales", gradient: colors.gradients.green, trend: 'up' as const, change: '', revenue: '' },
+        { id: 'my-earnings', title: "My Earnings", value: `PKR ${(dashboardData.myEarnings ?? 0).toLocaleString()}`, icon: DollarSign, color: colors.success, bgColor: '#059669', description: "Your earnings (after commission)", gradient: colors.gradients.green, trend: 'up' as const, change: '', revenue: `PKR ${(dashboardData.myEarnings ?? 0).toLocaleString()}` },
       ]
     : [
         { id: 'total-books', title: "Total Books", value: "—", icon: BookOpen, color: colors.accentLight, bgColor: colors.accent, description: "Loading...", gradient: colors.gradients.blue, trend: 'up' as const, change: '', revenue: '' },

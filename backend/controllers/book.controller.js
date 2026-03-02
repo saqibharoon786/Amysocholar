@@ -110,10 +110,18 @@ const getAllBooks = async (req, res, next) => {
       search,
       sortBy = 'createdAt',
       sortOrder = 'desc',
-      status = 'approved'
+      status
     } = req.query;
 
-    const query = { status };
+    // status 'all' = no filter (admin); missing = approved only (public); otherwise filter by status
+    const query = {};
+    if (status === 'all') {
+      // No status filter - return all (pending, approved, rejected)
+    } else if (status) {
+      query.status = status;
+    } else {
+      query.status = 'approved';
+    }
     
     // Filtering
     if (category) query.category = category;

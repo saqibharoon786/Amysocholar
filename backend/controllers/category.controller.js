@@ -8,13 +8,11 @@ const LEGACY_DEFAULT_NAMES = [
   "Religion", "Science", "Self-Help", "Tax Law", "Technology", "Tort Law", "book", "law",
 ];
 
-// List all categories – sirf wohi jo superadmin ne create ki; dummy/legacy names filter out
+// List all categories – saari DB categories (jo bhi create ki hain sab show hon)
 const getCategories = async (req, res, next) => {
   try {
     const categories = await Category.find().sort({ name: 1 }).select("name slug");
-    const names = categories
-      .map((c) => c.name)
-      .filter((name) => !LEGACY_DEFAULT_NAMES.includes(name));
+    const names = categories.map((c) => c.name);
     res.status(200).json({
       success: true,
       data: names,
